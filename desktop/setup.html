@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:">
+  <title>JARVIS AI Setup</title>
+  <style>
+    :root{color-scheme:dark;font-family:Segoe UI,system-ui,sans-serif;background:#02080d;color:#dffaff}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:28px;background:radial-gradient(circle at 50% 28%,#063247 0,#02080d 50%,#010305 100%)}
+    .panel{width:min(640px,100%);padding:38px;border:1px solid #1e6478;border-radius:22px;background:rgba(2,13,20,.94);box-shadow:0 0 60px rgba(0,199,255,.13),inset 0 0 40px rgba(0,199,255,.04)}
+    .reactor{width:94px;height:94px;margin:0 auto 24px;border:2px solid #63e7ff;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 34px #00bfee,inset 0 0 22px #00bfee;animation:pulse 2.2s ease-in-out infinite}
+    .reactor::before{content:"";width:54px;height:54px;border:8px double #d7faff;border-radius:50%;box-shadow:0 0 16px #8df0ff}
+    @keyframes pulse{50%{filter:brightness(1.35);transform:scale(1.025)}}
+    h1{margin:0;text-align:center;letter-spacing:.25em;font-size:clamp(23px,5vw,34px)}
+    .sub{text-align:center;color:#68d8ec;letter-spacing:.12em;font-size:12px;margin:10px 0 30px}
+    label{display:block;margin-bottom:9px;color:#a8f2ff;font-weight:650}input{width:100%;padding:15px 16px;border:1px solid #286c7d;border-radius:10px;background:#07151d;color:white;font-size:15px;outline:none}
+    input:focus{border-color:#6cecff;box-shadow:0 0 0 3px rgba(108,236,255,.12)}.hint{font-size:12px;line-height:1.55;color:#83aeb8;margin:10px 0 20px}.status{min-height:22px;color:#ff9f9f;font-size:13px}
+    .actions{display:flex;gap:12px;margin-top:14px}.actions button{flex:1;padding:13px;border-radius:10px;border:1px solid #2a7487;background:#0b2834;color:#dffaff;font-weight:700;cursor:pointer}.actions .primary{background:linear-gradient(135deg,#04a7cf,#1676bd);border-color:#72efff}.actions button:hover{filter:brightness(1.14)}
+    .secure{margin-top:24px;padding-top:18px;border-top:1px solid #123845;text-align:center;color:#5aa8b7;font-size:11px;letter-spacing:.08em}
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <div class="reactor" aria-hidden="true"></div>
+    <h1>J.A.R.V.I.S.</h1>
+    <p class="sub">WINDOWS DESKTOP LINK INITIALIZATION</p>
+    <form id="setupForm">
+      <label for="website">Cloudflare website address</label>
+      <input id="website" name="website" type="url" inputmode="url" autocomplete="url" required placeholder="https://your-jarvis.workers.dev">
+      <p class="hint">Paste the complete HTTPS address shown after your Cloudflare deployment. JARVIS will securely load that live website and automatically receive future site updates.</p>
+      <div class="status" id="status" role="alert"></div>
+      <div class="actions">
+        <button type="button" id="cancel">Cancel</button>
+        <button class="primary" type="submit">LINK JARVIS</button>
+      </div>
+    </form>
+    <div class="secure">NODE ACCESS DISABLED · ISOLATED AND SANDBOXED REMOTE SESSION</div>
+  </main>
+  <script>
+    const form=document.getElementById("setupForm"),input=document.getElementById("website"),status=document.getElementById("status"),cancel=document.getElementById("cancel");
+    const initial=new URLSearchParams(location.search).get("message");if(initial)status.textContent=initial;
+    form.addEventListener("submit",async(event)=>{event.preventDefault();status.textContent="Validating secure website…";try{await window.jarvisSetup.saveWebsite(input.value);status.textContent=""}catch(error){status.textContent=error&&error.message?error.message:"The website address could not be saved."}});
+    cancel.addEventListener("click",()=>window.jarvisSetup.cancel());input.focus();
+  </script>
+</body>
+</html>

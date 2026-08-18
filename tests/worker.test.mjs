@@ -1,0 +1,613 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import worker from "../src/worker.js";
+
+const AUTH_ENV = Object.freeze({
+  JARVIS_USERNAME: "Kristian",
+  JARVIS_PASSWORD: "TestOnly#Pass123",
+  JARVIS_SESSION_SECRET: "test-only-session-secret-that-is-not-used-in-production",
+});
+
+let cookiePromise;
+function authenticatedCookie() {
+  if (!cookiePromise) {
+    cookiePromise = worker.fetch(
+      new Request("https://jarvis.test/api/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: "Kristian", password: "TestOnly#Pass123" }),
+      }),
+      AUTH_ENV,
+    ).then((response) => {
+      assert.equal(response.status, 200);
+      return response.headers.get("set-cookie").split(";")[0];
+    });
+  }
+  return cookiePromise;
+}
+
+async function authorizedRequest(url, init = {}) {
+  const cookie = await authenticatedCookie();
+  const headers = new Headers(init.headers);
+  headers.set("cookie", cookie);
+  return new Request(url, { ...init, headers });
+}
+
+function createSyncDatabase() {
+  let row = { id: "primary", revision: 0, updated_at: 0, device_id: "", payload: "" };
+  return {
+    prepare(sql) {
+      let values = [];
+      const statement = {
+        bind(...nextValues) {
+          values = nextValues;
+          return statement;
+        },
+        async first() {
+          if (!/SELECT revision/i.test(sql)) throw new Error("Unexpected D1 select: " + sql);
+          return { ...row };
+        },
+        async run() {
+          if (!/UPDATE jarvis_sync/i.test(sql)) throw new Error("Unexpected D1 update: " + sql);
+          if (row.revision !== values[3]) return { meta: { changes: 0 } };
+          row = {
+            ...row,
+            revision: row.revision + 1,
+            updated_at: values[0],
+            device_id: values[1],
+            payload: values[2],
+          };
+          return { meta: { changes: 1 } };
+        },
+      };
+      return statement;
+    },
+  };
+}
+
+test("shows the responsive JARVIS login page before authentication", async () => {
+  const response = await worker.fetch(new Request("https://jarvis.test/"), AUTH_ENV);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("cache-control"), /no-store/);
+  assert.match(html, /IDENTITY VERIFICATION/);
+  assert.match(html, /JARVIS security interface online/);
+  assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
+  assert.match(html, /tone\(false\)/);
+  assert.match(html, /BUILD 1\.10\.0/);
+  assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
+  assert.match(html, /serviceWorker/);
+});
+
+test("accepts only the configured credentials and creates a secure session", async () => {
+  const denied = await worker.fetch(
+    new Request("https://jarvis.test/api/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "SomeoneElse", password: "incorrect" }),
+    }),
+    AUTH_ENV,
+  );
+  assert.equal(denied.status, 401);
+  assert.match((await denied.json()).error, /ACCESS DENIED/);
+
+  const accepted = await worker.fetch(
+    new Request("https://jarvis.test/api/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "Kristian", password: "TestOnly#Pass123" }),
+    }),
+    AUTH_ENV,
+  );
+  assert.equal(accepted.status, 200);
+  assert.equal((await accepted.json()).message, "Welcome, sir.");
+  const cookie = accepted.headers.get("set-cookie");
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Strict/);
+});
+
+test("blocks protected APIs without a valid session", async () => {
+  const response = await worker.fetch(
+    new Request("https://jarvis.test/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: "Hello" }] }),
+    }),
+    AUTH_ENV,
+  );
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: "Authentication required." });
+});
+
+test("publishes a public desktop update endpoint without exposing credentials", async () => {
+  const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
+  assert.equal((await health.json()).build, "1.10.0");
+
+  const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
+  const manifest = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(manifest.schema, 1);
+  assert.equal(manifest.enabled, false);
+  assert.equal(manifest.websiteBuild, "1.10.0");
+  assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
+
+  const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
+  assert.equal(head.status, 200);
+  assert.equal(await head.text(), "");
+});
+
+test("renders the JARVIS home interface after authentication", async () => {
+  const request = await authorizedRequest("https://jarvis.test/");
+  const response = await worker.fetch(request, AUTH_ENV);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /text\/html/);
+  assert.match(html, /J\.A\.R\.V\.I\.S\./);
+  assert.match(html, /Speak to JARVIS/);
+  assert.match(html, /Coding Copilot/);
+  assert.match(html, /id="logout"/);
+  assert.match(html, /rel="icon"/);
+  assert.match(html, /IMPORT CHATGPT EXPORT/);
+  assert.match(html, /Local Ollama/);
+  assert.match(html, /Web research/);
+  assert.match(html, /id="weatherLocation"/);
+  assert.match(html, /\/weather/);
+  assert.match(html, /\/settings bluetooth/);
+  assert.match(html, /\/controlpanel/);
+  assert.match(html, /\/app notepad/);
+  assert.match(html, /\/tools/);
+  assert.match(html, /\/folders/);
+  assert.match(html, /\/diagnostics/);
+  assert.match(html, /\/pc/);
+  assert.match(html, /runDesktopExtension/);
+  for (const preservedCommand of ["/weather", "/open", "/settings", "/controlpanel", "/app", "/system", "/calculate", "/speak", "/mute", "/new", "/remember"]) {
+    assert.ok(html.includes(preservedCommand), `Expected previous command ${preservedCommand} to remain available`);
+  }
+  assert.match(html, /runDesktopAction/);
+  assert.match(html, /window\.jarvisDesktop/);
+  assert.match(html, /api\.openSetting/);
+  assert.match(html, /api\.openControlPanel/);
+  assert.match(html, /api\.findApps/);
+  assert.match(html, /api\.openApp/);
+  assert.match(html, /\/api\/weather/);
+  assert.match(html, /id="cloudSync"/);
+  assert.match(html, /id="syncNow"/);
+  assert.match(html, /\/api\/sync/);
+  assert.match(html, /feedbackMessage/);
+  assert.match(html, /VECTOR RAG/);
+  assert.match(html, /id="reflectionMode"/);
+  assert.match(html, /id="reviewNext"/);
+  assert.match(html, /MULTIMODAL|multimodal/i);
+  assert.match(html, /ORCHESTRATOR LLM/);
+  assert.match(html, /image\/png/);
+  assert.match(html, /\/api\/iot/);
+  assert.match(html, /id="jumpLatest"/);
+  assert.match(html, /scrollChat/);
+  assert.match(html, /ResizeObserver/);
+  assert.match(html, /aria-live="polite"/);
+  assert.match(html, /id="installApp"/);
+  assert.match(html, /beforeinstallprompt/);
+  assert.match(html, /\.settings\{max-height:calc\(100vh - 36px\);max-height:calc\(100dvh - 36px\);min-height:0;overflow-x:hidden;overflow-y:auto/);
+  assert.match(html, /\.settings-head\{background:#071318;position:sticky;top:0/);
+  assert.match(html, /panel\.scrollTop=0/);
+  assert.match(html, /e\.key==="Escape"/);
+  assert.match(html, /id="newChat"/);
+  assert.match(html, /function newChat\(/);
+  assert.match(html, /q\("#newChat"\)\.onclick=function\(\)\{newChat\(\)\}/);
+  assert.doesNotMatch(html, /ctrlKey|metaKey/);
+  assert.doesNotMatch(html, /<kbd>N<\/kbd>/);
+  const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
+  assert.ok(inlineScripts.length > 0);
+  for (const script of inlineScripts) assert.doesNotThrow(() => new Function(script));
+});
+
+test("includes installable website and Windows desktop-app script assets", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../assets/manifest.webmanifest", import.meta.url), "utf8"));
+  const serviceWorker = await readFile(new URL("../assets/sw.js", import.meta.url), "utf8");
+  const installer = await readFile(new URL("../INSTALL_JARVIS_WINDOWS_APP.bat", import.meta.url), "utf8");
+  const powershellInstaller = await readFile(new URL("../windows-app/Install-Jarvis.ps1", import.meta.url), "utf8");
+  const uninstaller = await readFile(new URL("../UNINSTALL_JARVIS_WINDOWS_APP.bat", import.meta.url), "utf8");
+  const powershellUninstaller = await readFile(new URL("../windows-app/Uninstall-Jarvis.ps1", import.meta.url), "utf8");
+  const wrangler = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+
+  assert.equal(manifest.name, "JARVIS Personal Intelligence System");
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.icons.length, 2);
+  assert.match(serviceWorker, /event\.request\.mode !== "navigate"/);
+  assert.match(installer, /Install-Jarvis\.ps1/);
+  assert.match(powershellInstaller, /--app=/);
+  assert.match(powershellInstaller, /Microsoft\\Edge/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.10\.0"/);
+  assert.match(powershellInstaller, /Desktop/);
+  assert.match(powershellInstaller, /Start Menu/);
+  assert.match(powershellInstaller, /UninstallString/);
+  assert.match(uninstaller, /Uninstall-Jarvis\.ps1/);
+  assert.match(powershellUninstaller, /JARVISAI/);
+  assert.equal(wrangler.assets.directory, "./assets");
+});
+
+test("includes a standard secure EXE and MSI build project", async () => {
+  const desktopPackage = JSON.parse(await readFile(new URL("../desktop/package.json", import.meta.url), "utf8"));
+  const desktopMain = await readFile(new URL("../desktop/main.cjs", import.meta.url), "utf8");
+  const jarvisPreload = await readFile(new URL("../desktop/jarvis-preload.cjs", import.meta.url), "utf8");
+  const windowsControl = await readFile(new URL("../desktop/windows-control.cjs", import.meta.url), "utf8");
+  const setupPreload = await readFile(new URL("../desktop/setup-preload.cjs", import.meta.url), "utf8");
+  const updateManager = await readFile(new URL("../desktop/update-manager.cjs", import.meta.url), "utf8");
+  const buildBatch = await readFile(new URL("../BUILD_WINDOWS_INSTALLERS.bat", import.meta.url), "utf8");
+  const configureUpdateBatch = await readFile(new URL("../CONFIGURE_WINDOWS_AUTO_UPDATE.bat", import.meta.url), "utf8");
+  const githubUploadBatch = await readFile(new URL("../UPLOAD_TO_GITHUB.bat", import.meta.url), "utf8");
+  const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
+
+  assert.equal(desktopPackage.version, "1.10.0");
+  assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
+  assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
+  assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
+  assert.ok(desktopPackage.build.files.includes("update-manager.cjs"));
+  assert.equal(desktopPackage.build.msi.upgradeCode, "{F67A2D65-9C42-4D6D-BA38-11A2EFAF67B3}");
+  assert.match(desktopMain, /nodeIntegration: false/);
+  assert.match(desktopMain, /contextIsolation: true/);
+  assert.match(desktopMain, /sandbox: true/);
+  assert.match(desktopMain, /sameTrustedOrigin/);
+  assert.match(desktopMain, /validateJarvisSender/);
+  assert.match(desktopMain, /event\.senderFrame !== event\.sender\.mainFrame/);
+  assert.match(desktopMain, /shell:AppsFolder/);
+  assert.match(desktopMain, /shell: false/);
+  assert.match(desktopMain, /confirmationRequired/);
+  assert.match(desktopMain, /jarvis-preload\.cjs/);
+  assert.match(jarvisPreload, /contextBridge\.exposeInMainWorld\("jarvisDesktop"/);
+  assert.match(jarvisPreload, /jarvis:open-setting/);
+  assert.match(jarvisPreload, /jarvis:open-control-panel/);
+  assert.match(jarvisPreload, /jarvis:find-apps/);
+  assert.match(jarvisPreload, /jarvis:open-app/);
+  assert.match(jarvisPreload, /jarvis:open-tool/);
+  assert.match(jarvisPreload, /jarvis:open-folder/);
+  assert.match(jarvisPreload, /jarvis:run-diagnostic/);
+  assert.match(jarvisPreload, /jarvis:power-action/);
+  assert.match(windowsControl, /SETTING_TARGETS/);
+  assert.match(windowsControl, /CONTROL_ARGUMENTS/);
+  assert.match(windowsControl, /TOOL_TARGETS/);
+  assert.match(windowsControl, /FOLDER_TARGETS/);
+  assert.match(windowsControl, /DIAGNOSTIC_TARGETS/);
+  assert.match(windowsControl, /POWER_TARGETS/);
+  assert.match(desktopMain, /confirmCriticalComputerAction/);
+  assert.match(desktopMain, /defaultId: 1/);
+  assert.match(desktopMain, /runCaptured/);
+  assert.match(desktopMain, /jarvis:open-tool/);
+  assert.match(desktopMain, /jarvis:open-folder/);
+  assert.match(desktopMain, /jarvis:run-diagnostic/);
+  assert.match(desktopMain, /jarvis:power-action/);
+  assert.match(desktopMain, /api\/desktop-update/);
+  assert.match(desktopMain, /downloadVerifiedInstaller/);
+  assert.match(desktopMain, /sha256/i);
+  assert.match(desktopMain, /UPDATE_MAX_BYTES/);
+  assert.match(desktopMain, /Automatic desktop updates/);
+  assert.match(desktopMain, /launchDeferredInstaller/);
+  assert.match(updateManager, /compareVersions/);
+  assert.match(updateManager, /validateUpdateManifest/);
+  assert.doesNotMatch(jarvisPreload, /ipcRenderer\.send|ipcRenderer\.on/);
+  assert.match(setupPreload, /contextBridge\.exposeInMainWorld/);
+  assert.match(buildBatch, /npm run dist/);
+  assert.match(configureUpdateBatch, /JARVIS_DESKTOP_MANIFEST_URL/);
+  assert.match(githubUploadBatch, /kceike\/jarvis-ai-system/);
+  assert.match(githubUploadBatch, /gh auth login[\s\S]*--web/);
+  assert.match(githubUploadBatch, /gh auth refresh[\s\S]*--scopes workflow/);
+  assert.match(githubUploadBatch, /:activate_github_account/);
+  assert.match(githubUploadBatch, /gh api user --jq \.login/);
+  assert.match(githubUploadBatch, /git add -A/);
+  assert.match(githubUploadBatch, /git push -u origin main/);
+  assert.match(githubUploadBatch, /gh repo view/);
+  assert.match(githubUploadBatch, /gh repo create/);
+  assert.match(githubUploadBatch, /!gh auth git-credential/);
+  assert.match(githubUploadBatch, /will not overwrite it automatically/);
+  assert.match(workflow, /runs-on: windows-latest/);
+  assert.match(workflow, /desktop\/dist\/\*\.msi/);
+  assert.match(workflow, /jarvis-desktop-update\.json/);
+  assert.match(workflow, /Get-FileHash/);
+  assert.match(workflow, /gh release/);
+});
+
+test("encrypts, stores, reads, and revision-checks synchronized device data", async () => {
+  const indexed = [];
+  const env = {
+    ...AUTH_ENV,
+    JARVIS_SYNC_SECRET: "test-sync-secret-with-at-least-32-characters",
+    JARVIS_SYNC_DB: createSyncDatabase(),
+    AI: {
+      async run(model, input) {
+        assert.equal(model, "@cf/baai/bge-small-en-v1.5");
+        return { data: input.text.map(() => [0.1, 0.2, 0.3]) };
+      },
+    },
+    JARVIS_VECTORIZE: {
+      async upsert(vectors) { indexed.push(...vectors); },
+      async deleteByIds() {},
+    },
+  };
+  const initialRequest = await authorizedRequest("https://jarvis.test/api/sync");
+  const initialResponse = await worker.fetch(initialRequest, env);
+  assert.deepEqual(await initialResponse.json(), { revision: 0, updatedAt: 0, deviceId: "", data: null });
+
+  const snapshot = {
+    schema: 1,
+    conversations: [{ id: "chat-one", title: "Synced", mode: "chat", messages: [], createdAt: 1, updatedAt: 2 }],
+    settings: { title: "sir" },
+    settingsUpdatedAt: 2,
+    tombstones: {},
+    memoryClearedAt: 0,
+    memories: [{ id: "memory-one", text: "Prefers concise answers", source: "correction", role: "user", title: "Preference", createdAt: 3 }],
+  };
+  const putRequest = await authorizedRequest("https://jarvis.test/api/sync", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ baseRevision: 0, deviceId: "device-test", data: snapshot }),
+  });
+  const putResponse = await worker.fetch(putRequest, env);
+  const putData = await putResponse.json();
+  assert.equal(putResponse.status, 200);
+  assert.equal(putData.revision, 1);
+  assert.equal(indexed.length, 1);
+  assert.equal(indexed[0].namespace, "primary");
+  assert.equal(indexed[0].metadata.source, "correction");
+
+  const readRequest = await authorizedRequest("https://jarvis.test/api/sync");
+  const readResponse = await worker.fetch(readRequest, env);
+  const readData = await readResponse.json();
+  assert.equal(readData.revision, 1);
+  assert.equal(readData.deviceId, "device-test");
+  assert.deepEqual(readData.data, snapshot);
+
+  const staleRequest = await authorizedRequest("https://jarvis.test/api/sync", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ baseRevision: 0, deviceId: "stale-device", data: snapshot }),
+  });
+  const staleResponse = await worker.fetch(staleRequest, env);
+  assert.equal(staleResponse.status, 409);
+  assert.equal((await staleResponse.json()).revision, 1);
+});
+
+test("reports when cloud synchronization has not been configured", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/sync");
+  const response = await worker.fetch(request, AUTH_ENV);
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /not configured/i);
+});
+
+test("returns current weather and a three-day forecast", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/weather", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ location: "Iloilo City, Philippines" }),
+  });
+  const originalFetch = globalThis.fetch;
+  const called = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    called.push(url);
+    if (url.hostname === "geocoding-api.open-meteo.com") {
+      return Response.json({
+        results: [{ name: "Iloilo City", admin1: "Western Visayas", country: "Philippines", latitude: 10.6969, longitude: 122.5644, timezone: "Asia/Manila" }],
+      });
+    }
+    if (url.hostname === "api.open-meteo.com") {
+      return Response.json({
+        timezone: "Asia/Manila",
+        current: { temperature_2m: 29.4, apparent_temperature: 34.1, relative_humidity_2m: 73, weather_code: 2, wind_speed_10m: 9.2 },
+        daily: {
+          time: ["2026-08-14", "2026-08-15", "2026-08-16"],
+          weather_code: [2, 61, 95],
+          temperature_2m_max: [31, 30, 29],
+          temperature_2m_min: [25, 24, 24],
+          precipitation_probability_max: [35, 65, 80],
+        },
+      });
+    }
+    throw new Error("Unexpected external URL: " + url.href);
+  };
+  try {
+    const response = await worker.fetch(request, AUTH_ENV);
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.location, "Iloilo City, Western Visayas, Philippines");
+    assert.equal(data.current.description, "Partly cloudy");
+    assert.equal(data.current.temperature, 29.4);
+    assert.equal(data.daily.length, 3);
+    assert.equal(data.daily[2].description, "Thunderstorm");
+    assert.equal(data.source, "Open-Meteo");
+    assert.equal(called[0].searchParams.get("name"), "Iloilo City, Philippines");
+    assert.equal(called[1].searchParams.get("forecast_days"), "3");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects an empty weather location without making a network request", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/weather", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ location: "" }),
+  });
+  const response = await worker.fetch(request, AUTH_ENV);
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /weather location is required/i);
+});
+
+test("returns a safe demo response without an AI binding", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      mode: "chat",
+      messages: [{ role: "user", content: "Status report" }],
+    }),
+  });
+  const response = await worker.fetch(request, AUTH_ENV);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.demo, true);
+  assert.match(data.response, /At your service/);
+});
+
+test("routes an allowed model and includes Memory Vault context", async () => {
+  let selectedModel = "";
+  let systemPrompt = "";
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async run(model, input) {
+        selectedModel = model;
+        systemPrompt = input.messages[0].content;
+        return { response: "Memory acknowledged." };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      mode: "chat",
+      modelKey: "reasoning",
+      memory: "The user prefers concise technical answers.",
+      messages: [{ role: "user", content: "How should you answer me?" }],
+    }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.modelKey, "reasoning");
+  assert.equal(selectedModel, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
+  assert.match(systemPrompt, /prefers concise technical answers/);
+});
+
+test("reflects on a draft and revises it before returning", async () => {
+  const calls = [];
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async run(model, input) {
+        calls.push({ model, input });
+        if (calls.length === 1) return { response: "The first draft has a defect." };
+        if (calls.length === 2) return { response: "REVISE\nCorrect the unsupported claim." };
+        return { response: "The corrected final answer." };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      reflectionMode: true,
+      messages: [{ role: "user", content: "Give me a checked answer." }],
+    }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.response, "The corrected final answer.");
+  assert.deepEqual(data.reflection, { used: true, revised: true, uncertain: false });
+  assert.equal(calls.length, 3);
+  assert.equal(calls[1].model, "@cf/meta/llama-3.2-3b-instruct");
+});
+
+test("routes supported image input through the vision model", async () => {
+  let selectedModel = "";
+  let image = "";
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async run(model, input) {
+        selectedModel = model;
+        image = input.image;
+        return { response: "I can see the attached test image." };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      reflectionMode: false,
+      semanticMemory: false,
+      image: "data:image/png;base64,iVBORw0KGgo=",
+      messages: [{ role: "user", content: "What is in this image?" }],
+    }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(selectedModel, "@cf/meta/llama-3.2-11b-vision-instruct");
+  assert.equal(image, "iVBORw0KGgo=");
+  assert.deepEqual(data.toolsUsed, ["vision"]);
+});
+
+test("retrieves semantically related synchronized memory for chat", async () => {
+  let systemPrompt = "";
+  const env = {
+    ...AUTH_ENV,
+    JARVIS_VECTORIZE: {
+      async query() {
+        return { matches: [{ score: 0.88, metadata: { source: "correction", text: "Kristian prefers direct technical explanations." } }] };
+      },
+    },
+    AI: {
+      async run(model, input) {
+        if (model === "@cf/baai/bge-small-en-v1.5") return { data: [[0.2, 0.4, 0.6]] };
+        systemPrompt = input.messages[0].content;
+        return { response: "Understood." };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      reflectionMode: false,
+      semanticMemory: true,
+      messages: [{ role: "user", content: "How should you explain this?" }],
+    }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.match(systemPrompt, /prefers direct technical explanations/);
+  assert.deepEqual(data.toolsUsed, ["semantic_memory"]);
+});
+
+test("rejects unconfigured web research clearly", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/research", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ query: "current Cloudflare Workers AI limits" }),
+  });
+  const response = await worker.fetch(request, AUTH_ENV);
+  const data = await response.json();
+  assert.equal(response.status, 502);
+  assert.match(data.error, /SEARXNG_URL is not configured/);
+});
+
+test("requires explicit confirmation and configuration for IoT webhooks", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/iot", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "lights on", confirmed: true }),
+  });
+  const response = await worker.fetch(request, AUTH_ENV);
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /IOT_WEBHOOK_URL is not configured/);
+});
+
+test("logout clears the secure browser session", async () => {
+  const response = await worker.fetch(
+    new Request("https://jarvis.test/api/logout", { method: "POST" }),
+    AUTH_ENV,
+  );
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("set-cookie"), /Max-Age=0/);
+});
+
+test("provides a public health endpoint", async () => {
+  const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.10.0", ai: false });
+});

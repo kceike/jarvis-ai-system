@@ -1,0 +1,90 @@
+{
+  "name": "jarvis-ai-desktop",
+  "version": "1.10.0",
+  "description": "Secure Windows desktop shell for the JARVIS Cloudflare AI system",
+  "main": "main.cjs",
+  "private": true,
+  "author": {
+    "name": "Kristian Relova"
+  },
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "dist": "electron-builder --win --x64",
+    "dist:exe": "electron-builder --win nsis --x64",
+    "dist:msi": "electron-builder --win msi --x64"
+  },
+  "devDependencies": {
+    "electron": "43.4.0",
+    "electron-builder": "26.15.2"
+  },
+  "build": {
+    "appId": "com.kristian.jarvis.ai",
+    "productName": "JARVIS AI",
+    "copyright": "Copyright © 2026 Kristian Relova",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "../assets"
+    },
+    "files": [
+      "main.cjs",
+      "jarvis-preload.cjs",
+      "setup-preload.cjs",
+      "setup.html",
+      "update-manager.cjs",
+      "url-config.cjs",
+      "windows-control.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "../assets/jarvis.ico",
+        "to": "jarvis.ico"
+      },
+      {
+        "from": "../JARVIS_WEBSITE_URL.txt",
+        "to": "JARVIS_WEBSITE_URL.txt"
+      }
+    ],
+    "win": {
+      "icon": "jarvis.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "JARVIS-AI-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "JARVIS AI",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "jarvis.ico",
+      "uninstallerIcon": "jarvis.ico"
+    },
+    "msi": {
+      "artifactName": "JARVIS-AI-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "upgradeCode": "{F67A2D65-9C42-4D6D-BA38-11A2EFAF67B3}",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "JARVIS AI",
+      "runAfterFinish": true,
+      "warningsAsErrors": true
+    }
+  }
+}

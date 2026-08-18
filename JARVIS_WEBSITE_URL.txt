@@ -1,0 +1,3 @@
+Paste your deployed HTTPS Cloudflare Worker address here, or leave this line unchanged and the Windows installer will ask for it.
+
+Example: https://jarvis-ai-system.YOUR-SUBDOMAIN.workers.dev

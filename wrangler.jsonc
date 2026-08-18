@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "jarvis-ai-system",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./assets"
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "d1_databases": [
+    {
+      "binding": "JARVIS_SYNC_DB",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vectorize": [
+    {
+      "binding": "JARVIS_VECTORIZE",
+      "index_name": "jarvis-memory-v1"
+    }
+  ],
+  "vars": {
+    "SEARXNG_URL": "",
+    "IOT_WEBHOOK_URL": "",
+    "JARVIS_USERNAME": "Kristian"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
