@@ -124,8 +124,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.12.2-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.12.2-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.12.3-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.12.3-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -133,7 +133,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.12.2 keeps the optional **Hey JARVIS** wake phrase active from the Windows system tray and fixes the window freeze that could occur after minimizing and reopening the app. JARVIS now keeps its renderer responsive while tray-hidden, defers native hide/focus transitions, and cancels a pending hide when reopened quickly. Saying the wake phrase restores and focuses JARVIS before it responds. The tray menu shows whether the listener is starting, listening, or off. Closing or exiting JARVIS still stops the listener. Browser/PWA listening continues to pause whenever the page is hidden.
+Version 1.12.3 keeps the optional **Hey JARVIS** wake phrase active from the Windows system tray and fixes the black content surface that could appear after reopening the hidden app. On restore, JARVIS explicitly schedules full Chromium repaints, restores focus to both the native window and its web content, and cancels stale hide or repaint timers. The renderer now follows Chromium's normal hidden-window lifecycle while the separate local Windows wake-word process remains active. Saying the wake phrase restores and focuses JARVIS before it responds. Closing or exiting JARVIS still stops the listener. Browser/PWA listening continues to pause whenever the page is hidden.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.

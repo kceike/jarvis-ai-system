@@ -58,8 +58,8 @@ echo ============================================================
 echo SUCCESS: Windows installers were created in:
 echo %~dp0desktop\dist
 echo.
-echo Recommended: JARVIS-AI-Setup-1.12.2-x64.exe
-echo Enterprise:  JARVIS-AI-1.12.2-x64.msi
+echo Recommended: JARVIS-AI-Setup-1.12.3-x64.exe
+echo Enterprise:  JARVIS-AI-1.12.3-x64.msi
 echo ============================================================
 echo.
 pause

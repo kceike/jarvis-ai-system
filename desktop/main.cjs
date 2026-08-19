@@ -41,6 +41,7 @@ let wakeWordReady = false;
 let tray = null;
 let trayNoticeShown = false;
 let trayHideTimer = null;
+let trayRepaintTimers = new Set();
 
 const START_APPS_COMMAND = "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress";
 const INSTALL_TYPE_COMMAND = "$paths=@('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'); Get-ItemProperty $paths -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -eq 'JARVIS AI'} | Select-Object DisplayName,WindowsInstaller,UninstallString | ConvertTo-Json -Compress";
@@ -110,21 +111,44 @@ function wakeWordScriptPath() {
   return app.isPackaged ? join(process.resourcesPath, "wake-word-listener.ps1") : join(__dirname, "wake-word-listener.ps1");
 }
 
+function clearTrayRepaintTimers() {
+  for (const timer of trayRepaintTimers) clearTimeout(timer);
+  trayRepaintTimers.clear();
+}
+
+function repaintJarvisWindow(window) {
+  if (!window || window.isDestroyed() || currentWindow !== window || !window.isVisible()) return;
+  try { window.webContents.invalidate(); } catch {}
+}
+
+function scheduleJarvisRepaint(window, forceToFront = false) {
+  clearTrayRepaintTimers();
+  repaintJarvisWindow(window);
+  for (const delay of [80, 260]) {
+    const timer = setTimeout(() => {
+      trayRepaintTimers.delete(timer);
+      if (window.isDestroyed() || currentWindow !== window || !window.isVisible()) return;
+      repaintJarvisWindow(window);
+      if (delay !== 80) return;
+      window.focus();
+      try { window.webContents.focus(); } catch {}
+      if (forceToFront) {
+        try { window.moveTop(); } catch {}
+      }
+    }, delay);
+    timer.unref();
+    trayRepaintTimers.add(timer);
+  }
+}
+
 function showJarvisWindow(forceToFront = false) {
   const window = currentWindow;
   if (!window || window.isDestroyed()) return;
   clearTimeout(trayHideTimer);
   trayHideTimer = null;
   if (window.isMinimized()) window.restore();
-  if (!window.isVisible()) window.show();
-  const focusTimer = setTimeout(() => {
-    if (window.isDestroyed()) return;
-    window.focus();
-    if (forceToFront) {
-      try { window.moveTop(); } catch {}
-    }
-  }, 60);
-  focusTimer.unref();
+  window.show();
+  scheduleJarvisRepaint(window, forceToFront);
 }
 
 function trayWakeLabel() {
@@ -161,6 +185,7 @@ function ensureTray() {
 function destroyTray() {
   clearTimeout(trayHideTimer);
   trayHideTimer = null;
+  clearTrayRepaintTimers();
   if (!tray) return;
   tray.destroy();
   tray = null;
@@ -170,6 +195,7 @@ function hideJarvisToTray() {
   const window = currentWindow;
   if (!window || window.isDestroyed()) return;
   ensureTray();
+  clearTrayRepaintTimers();
   clearTimeout(trayHideTimer);
   trayHideTimer = setTimeout(() => {
     trayHideTimer = null;
@@ -831,7 +857,6 @@ function createJarvisWindow(websiteUrl) {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      backgroundThrottling: false,
       webviewTag: false,
       navigateOnDragDrop: false,
       spellcheck: true,
@@ -861,7 +886,7 @@ function createJarvisWindow(websiteUrl) {
   currentWindow.loadURL(websiteUrl);
   ensureTray();
   currentWindow.on("minimize", hideJarvisToTray);
-  currentWindow.on("closed", () => { stopWakeWordProcess(); currentWindow = null; });
+  currentWindow.on("closed", () => { clearTrayRepaintTimers(); stopWakeWordProcess(); currentWindow = null; });
 }
 
 function saveWebsiteFromSetup(event, rawUrl) {

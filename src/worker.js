@@ -290,12 +290,12 @@ const HTML = String.raw`<!doctype html>
       async function createMissionPlan(goal,displayPrompt){goal=String(goal||"").trim();if(!goal){toast("Describe the mission goal first.");return}if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in the Skills Dashboard.");return}var c=current(),prompt=displayPrompt||"Create a mission plan: "+goal,now=Date.now();closeMissionControl();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:prompt,createdAt:now});if(c.messages.length===1)c.title=goal.replace(/\s+/g," ").slice(0,48);c.updatedAt=now;state.sending=true;save();render();try{var data=await postJson("/api/mission-plan",{goal:goal,userTitle:state.settings.title,memory:await memorySearch(goal)}),mission=cleanMission(data.mission);if(!mission||!mission.steps.length)throw new Error("Mission Control returned no usable steps.");c.messages.push({id:id("msg"),role:"assistant",content:"**MISSION PLAN READY**\n"+(mission.summary||"Review each step below. JARVIS will not execute a computer action without your approval."),mission:mission,createdAt:Date.now()});c.updatedAt=Date.now();if(state.settings.autoSpeak)speak("Mission plan ready, "+(state.settings.title||"sir")+". Review the steps before execution.")}catch(error){c.messages.push({id:id("msg"),role:"assistant",content:"Mission Control could not create the plan. "+error.message,createdAt:Date.now()})}finally{state.sending=false;save();render()}}
       function openMissionControl(){if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in Settings.");return}q("#missionModal").classList.add("open");renderMissionDashboard();requestAnimationFrame(function(){q("#missionGoal").focus()})}
       function closeMissionControl(){q("#missionModal").classList.remove("open")}
-      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.12.2","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
+      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.12.3","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
       function renderHelpCenter(search){var term=String(search||"").trim().toLowerCase(),sections=HELP_SECTIONS.map(function(section){var items=section.items.filter(function(item){return!term||(section.title+" "+item.name+" "+item.description+" "+(item.example||"")).toLowerCase().includes(term)});return{title:section.title,items:items}}).filter(function(section){return section.items.length});q("#helpContent").innerHTML=sections.length?sections.map(function(section){return'<section class="help-section"><h3>'+esc(section.title)+'</h3><div class="help-items">'+section.items.map(function(item){return'<article class="help-item"><h4>'+esc(item.name)+'</h4><p>'+esc(item.description)+'</p>'+(item.example?'<code>'+esc(item.example)+'</code><button class="help-run" data-help-command="'+esc(item.example)+'">LOAD EXAMPLE</button>':"")+'</article>'}).join("")+'</div></section>'}).join(""):'<div class="help-empty">No command, function, or tutorial matched that search.</div>';qa("[data-help-command]").forEach(function(button){button.onclick=function(){q("#input").value=button.dataset.helpCommand;inputChanged();closeHelpCenter();q("#input").focus();toast("Example loaded. Review it, then press Send when ready.")}})}
       function openHelpCenter(){closeMissionControl();closeSettings();q("#helpSearch").value="";renderHelpCenter("");q("#helpScroll").scrollTop=0;q("#helpModal").classList.add("open");requestAnimationFrame(function(){q("#helpSearch").focus()})}
       function closeHelpCenter(){q("#helpModal").classList.remove("open")}
       async function copyHelpGuide(){var guide=helpGuideMarkdown();try{await navigator.clipboard.writeText(guide);toast("Complete JARVIS guide copied.")}catch(error){toast("Copy was blocked. Use Save Guide instead.")}}
-      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.12.2.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
+      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.12.3.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
       function chatDistance(){var stream=q("#stream");return stream?Math.max(0,stream.scrollHeight-stream.scrollTop-stream.clientHeight):0}
       function updateJumpButton(newResponse){var button=q("#jumpLatest");if(!button)return;button.textContent=newResponse?"↓ NEW JARVIS RESPONSE":"↓ LATEST RESPONSE";button.classList.toggle("show",!chatStickToBottom&&chatDistance()>90)}
       function scrollChat(behavior){var stream=q("#stream");if(!stream||stream.hidden)return;chatStickToBottom=true;chatAutoScrolling=true;updateJumpButton(false);requestAnimationFrame(function(){stream.scrollTo({top:stream.scrollHeight,left:0,behavior:behavior||"auto"});setTimeout(function(){if(chatAutoScrolling){stream.scrollTop=stream.scrollHeight;chatStickToBottom=true;chatAutoScrolling=false;updateJumpButton(false)}},behavior==="smooth"?420:80)})}
@@ -516,7 +516,7 @@ const LOGIN_HTML = String.raw`<!doctype html>
       <button class="submit" id="submit" type="submit">ESTABLISH SECURE LINK</button>
       <div class="status" id="status" role="status" aria-live="polite">AWAITING CREDENTIALS</div>
     </form>
-    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.12.2</div>
+    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.12.3</div>
   </main>
   <script>
     (function(){
@@ -1271,7 +1271,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "Configure JARVIS_DESKTOP_MANIFEST_URL after publishing the first Windows release.",
-      websiteBuild: "1.12.2",
+      websiteBuild: "1.12.3",
     }, 200, isHead);
   }
   try {
@@ -1294,7 +1294,7 @@ async function desktopUpdate(request, env) {
       version,
       publishedAt: typeof release.publishedAt === "string" ? release.publishedAt.slice(0, 64) : "",
       notes: typeof release.notes === "string" ? release.notes.slice(0, 4_000) : "",
-      websiteBuild: "1.12.2",
+      websiteBuild: "1.12.3",
       installers: { exe, msi },
     }, 200, isHead);
   } catch (error) {
@@ -1302,7 +1302,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "The configured Windows release channel is temporarily unavailable.",
-      websiteBuild: "1.12.2",
+      websiteBuild: "1.12.3",
       error: error instanceof Error ? error.message.slice(0, 240) : "Update service error.",
     }, 502, isHead);
   }
@@ -1314,7 +1314,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/login") return login(request, env);
     if (request.method === "POST" && url.pathname === "/api/logout") return logout();
     if (url.pathname === "/api/health") {
-      return json({ service: "JARVIS", status: "online", build: "1.12.2", ai: Boolean(env.AI) });
+      return json({ service: "JARVIS", status: "online", build: "1.12.3", ai: Boolean(env.AI) });
     }
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/api/desktop-update") return desktopUpdate(request, env);
     const authorized = await isAuthorized(request, env);
