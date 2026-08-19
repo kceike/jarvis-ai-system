@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.12\.4/);
+  assert.match(html, /BUILD 1\.12\.5/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.12.4");
+  assert.equal((await health.json()).build, "1.12.5");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.12.4");
+  assert.equal(manifest.websiteBuild, "1.12.5");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -217,7 +217,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.12\.4\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.12\.5\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -230,7 +230,10 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /function missionCard/);
   assert.match(html, /beforeinstallprompt/);
   assert.match(html, /\.settings\{max-height:calc\(100vh - 36px\);max-height:calc\(100dvh - 36px\);min-height:0;overflow-x:hidden;overflow-y:auto/);
-  assert.match(html, /\.settings-head\{background:#071318;position:sticky;top:0/);
+  assert.match(html, /\.settings\{background:#071318;[^}]*padding:0 21px 21px/);
+  assert.match(html, /\.settings-head\{align-items:flex-start;[^}]*padding:21px 0 16px/);
+  assert.match(html, /\.settings-head\{background:#071318;box-shadow:0 1px 0 var\(--line\);isolation:isolate;position:sticky;top:0;z-index:10/);
+  assert.match(html, /\.settings\{max-height:92dvh;overflow:auto;padding:0 16px 16px\}\.settings-head\{padding-top:16px\}/);
   assert.match(html, /panel\.scrollTop=0/);
   assert.match(html, /e\.key(?:===|!==)"Escape"/);
   assert.match(html, /id="newChat"/);
@@ -259,7 +262,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.12\.4"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.12\.5"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -281,7 +284,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.12.4");
+  assert.equal(desktopPackage.version, "1.12.5");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
   assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
   assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
@@ -745,5 +748,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.12.4", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.12.5", ai: false });
 });

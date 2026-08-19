@@ -124,8 +124,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.12.4-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.12.4-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.12.5-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.12.5-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -133,7 +133,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.12.4 keeps the system-tray and repaint fixes and corrects the **Always listen for Hey JARVIS** control. The switch now applies immediately and displays its actual `STARTING`, `ON`, or `OFF` state. Turning it off stops the native listener immediately. If the Windows or browser speech listener cannot start, JARVIS saves the setting as off, returns the switch to `OFF`, and reports the real listener error instead of leaving an enabled-looking control. The installed app does not fall back to the less reliable browser speech service when its native Windows listener fails.
+Version 1.12.5 keeps the system-tray, repaint, and **Always listen for Hey JARVIS** fixes and corrects the Settings modal’s scrolling header. The title now owns the panel’s top padding and remains on an opaque sticky layer, so setting text cannot scroll into the title area. Desktop and mobile layouts use matching protected header spacing. The switch continues to apply immediately, display `STARTING`, `ON`, or `OFF`, stop the listener when disabled, and return to `OFF` with the real error if startup fails.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.

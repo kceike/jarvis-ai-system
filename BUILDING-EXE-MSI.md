@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.12.4 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.12.5 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.12.4-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.12.4-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.12.5-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.12.5-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.12.4 control upgrade is additive: every earlier JARVIS feature and command remains present. The Always listen switch applies immediately and displays `STARTING`, `ON`, or `OFF`. Its saved value, visual position, and actual native-listener state remain synchronized. A failed listener start automatically returns the switch to `OFF` and preserves the native error for troubleshooting. Turning the switch off stops the Windows listener immediately. The system-tray wake listener, safe window repaint behavior, and all existing action confirmations remain enforced.
+The v1.12.5 layout upgrade is additive: every earlier JARVIS feature and command remains present. The Settings modal title now owns the panel’s top padding and stays on an opaque sticky layer, preventing scrolled settings text from overlapping the title on desktop and mobile. The Always listen switch still applies immediately and displays `STARTING`, `ON`, or `OFF`; its saved value, visual position, and actual native-listener state remain synchronized. The system-tray wake listener, safe window repaint behavior, and all existing action confirmations remain enforced.
 
 ## Build with GitHub Actions
 
