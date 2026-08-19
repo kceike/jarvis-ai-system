@@ -180,7 +180,7 @@ The included service worker does not cache authenticated pages or AI responses. 
 
 ## Single-user login
 
-The only authorized username is `Kristian`. Use the password supplied when this build was created. The password is not included in the ZIP or `wrangler.jsonc`; the Windows batch stores it as an encrypted Cloudflare Worker secret.
+The only authorized username is allowed. Use the password supplied when this build was created. The password is not included in the ZIP or `wrangler.jsonc`; the Windows batch stores it as an encrypted Cloudflare Worker secret.
 
 Successful authentication creates an HttpOnly, Secure, SameSite session cookie that expires after seven days. Its private token comes from `JARVIS_SESSION_SECRET`, which the Windows deployment batch generates and stores privately in Cloudflare. Selecting **Log Out** removes the browser session immediately.
 
