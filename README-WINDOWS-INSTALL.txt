@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.11.1
+JARVIS AI - WINDOWS INSTALLER 1.11.2
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,11 +9,11 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.11.1 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.11.2 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.11.1 keeps every previous JARVIS function and adds a complete searchable
-Help Center, tutorials, and an offline saved guide to the v1.11 Smart Upgrade Pack.
+Version 1.11.2 keeps every previous JARVIS function and fixes Help Center scrolling
+so the fixed title and controls no longer overlap the searchable guide content.
 It keeps the visible confirmation after an automatic update. Install v1.10.0 or later once, then configure the release channel with
 CONFIGURE_WINDOWS_AUTO_UPDATE.bat. Future verified native releases download in
 the background and install when JARVIS closes.

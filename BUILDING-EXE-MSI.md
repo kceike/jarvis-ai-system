@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.11.1 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.11.2 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.11.1-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.11.1-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.11.2-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.11.2-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.11.1 Smart Upgrade Pack is additive: every earlier JARVIS feature and command remains present. It adds a searchable Help Center and offline Markdown guide while preserving Screen Vision confirmations, fixed read-only IT checks, Mission Control allowlists, and the verified visible installer handoff.
+The v1.11.2 Smart Upgrade Pack is additive: every earlier JARVIS feature and command remains present. It fixes Help Center title overlap with a separate scrollable guide while preserving the searchable guide, offline Markdown export, Screen Vision confirmations, fixed read-only IT checks, Mission Control allowlists, and the verified visible installer handoff.
 
 ## Build with GitHub Actions
 
