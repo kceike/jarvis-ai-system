@@ -124,8 +124,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.11.2-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.11.2-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.12.1-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.12.1-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -133,7 +133,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.11.2 fixes Help Center scrolling by keeping the title, close control, search, Copy Guide, and Save Guide controls in a fixed non-overlapping header while only the command guide scrolls. Mission Control, one-time Screen Vision, Windows IT Copilot, daily briefings, Smart Skills, the saved offline guide, and every earlier JARVIS capability remain available.
+Version 1.12.1 extends the optional **Hey JARVIS** wake phrase into the Windows system tray. Minimizing the genuine EXE/MSI hides the taskbar window while the tray icon and local Windows wake-word process remain active. Saying the wake phrase restores, raises, and focuses JARVIS before it responds. The tray menu shows whether the listener is starting, listening, or off. Closing or exiting JARVIS still stops the listener. Browser/PWA listening continues to pause whenever the page is hidden.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
@@ -142,6 +142,7 @@ Version 1.11.2 fixes Help Center scrolling by keeping the title, close control, 
 - `/briefing` — show the current weather, desktop/update link status, active mission count, and pending human reviews. When enabled, JARVIS creates this once per local day.
 - `/skills` — show the current Smart Skills status. Open Settings to change individual skills.
 - `/help` or `/tutorial` — open the searchable Help Center. Select **SAVE GUIDE (.MD)** to store and download every command, function, and tutorial instruction.
+- **Hey JARVIS** — enable it under Settings → Voice and Response. Say “Hey Jarvis” and wait for the acknowledgement, or say “Hey Jarvis, open Notepad” in one sentence. In the Windows EXE/MSI, minimize JARVIS to keep it available from the system tray; the wake phrase brings it to the front. It never bypasses confirmations for Windows, power, IoT, or other protected actions.
 
 - `/settings` or “open Windows settings” — open Settings home.
 - `/settings bluetooth`, `/settings display`, `/settings privacy`, `/settings update history`, and similar requests — open an allowlisted Settings page.

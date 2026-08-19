@@ -14,4 +14,25 @@ contextBridge.exposeInMainWorld("jarvisDesktop", Object.freeze({
   runItHealthCheck: () => ipcRenderer.invoke("jarvis:run-it-health-check"),
   captureScreen: () => ipcRenderer.invoke("jarvis:capture-screen"),
   powerAction: (query) => ipcRenderer.invoke("jarvis:power-action", String(query || "").slice(0, 120)),
+  setWakeWordEnabled: (enabled) => ipcRenderer.invoke("jarvis:set-wake-word", enabled === true),
+  onWakeWord: (callback) => {
+    if (typeof callback !== "function") return () => {};
+    const listener = (_event, payload) => callback(Object.freeze({
+      transcript: String(payload?.transcript || "").slice(0, 500),
+      engine: payload?.engine === "windows" ? "windows" : "unknown",
+    }));
+    ipcRenderer.on("jarvis:wake-word", listener);
+    return () => ipcRenderer.removeListener("jarvis:wake-word", listener);
+  },
+  onWakeWordStatus: (callback) => {
+    if (typeof callback !== "function") return () => {};
+    const listener = (_event, payload) => callback(Object.freeze({
+      status: String(payload?.status || "").slice(0, 30),
+      engine: String(payload?.engine || "").slice(0, 30),
+      language: String(payload?.language || "").slice(0, 30),
+      message: String(payload?.message || "").slice(0, 240),
+    }));
+    ipcRenderer.on("jarvis:wake-word-status", listener);
+    return () => ipcRenderer.removeListener("jarvis:wake-word-status", listener);
+  },
 }));

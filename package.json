@@ -1,6 +1,6 @@
 {
   "name": "jarvis-ai-system",
-  "version": "1.11.2",
+  "version": "1.12.1",
   "private": true,
   "type": "module",
   "scripts": {

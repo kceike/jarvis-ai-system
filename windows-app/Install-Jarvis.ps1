@@ -90,7 +90,7 @@ $uninstallShortcut.Save()
 $uninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\JARVISAI"
 New-Item -Path $uninstallKey -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name DisplayName -Value "JARVIS AI" -PropertyType String -Force | Out-Null
-New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value "1.11.2" -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value "1.12.1" -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name Publisher -Value "JARVIS Personal Intelligence System" -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name URLInfoAbout -Value $uri.AbsoluteUri -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $uninstallKey -Name DisplayIcon -Value $installedIcon -PropertyType String -Force | Out-Null

@@ -1,6 +1,6 @@
 "use strict";
 
-const { app, BrowserWindow, desktopCapturer, dialog, ipcMain, Menu, net, Notification, screen, session, shell } = require("electron");
+const { app, BrowserWindow, desktopCapturer, dialog, ipcMain, Menu, net, Notification, screen, session, shell, Tray } = require("electron");
 const { execFile, spawn } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const { createWriteStream, mkdirSync, readFileSync, writeFileSync, unlinkSync } = require("node:fs");
@@ -35,6 +35,11 @@ let updateCheckPromise = null;
 let pendingUpdate = null;
 let updateInstallLaunched = false;
 let updateQuitInProgress = false;
+let wakeWordProcess = null;
+let wakeWordOutput = "";
+let wakeWordReady = false;
+let tray = null;
+let trayNoticeShown = false;
 
 const START_APPS_COMMAND = "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress";
 const INSTALL_TYPE_COMMAND = "$paths=@('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'); Get-ItemProperty $paths -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -eq 'JARVIS AI'} | Select-Object DisplayName,WindowsInstaller,UninstallString | ConvertTo-Json -Compress";
@@ -98,6 +103,163 @@ function configuredWebsite() {
 
 function iconPath() {
   return app.isPackaged ? join(process.resourcesPath, "jarvis.ico") : join(__dirname, "..", "assets", "jarvis.ico");
+}
+
+function wakeWordScriptPath() {
+  return app.isPackaged ? join(process.resourcesPath, "wake-word-listener.ps1") : join(__dirname, "wake-word-listener.ps1");
+}
+
+function showJarvisWindow(forceToFront = false) {
+  if (!currentWindow || currentWindow.isDestroyed()) return;
+  currentWindow.setSkipTaskbar(false);
+  if (currentWindow.isMinimized()) currentWindow.restore();
+  if (!currentWindow.isVisible()) currentWindow.show();
+  currentWindow.focus();
+  if (!forceToFront) return;
+  try {
+    currentWindow.setAlwaysOnTop(true, "pop-up-menu");
+    currentWindow.moveTop();
+    const releaseTop = setTimeout(() => {
+      if (currentWindow && !currentWindow.isDestroyed()) currentWindow.setAlwaysOnTop(false);
+    }, 1_200);
+    releaseTop.unref();
+  } catch {}
+}
+
+function trayWakeLabel() {
+  if (wakeWordReady) return "Hey JARVIS: Listening";
+  if (wakeWordProcess) return "Hey JARVIS: Starting";
+  return "Hey JARVIS: Off";
+}
+
+function refreshTray() {
+  if (!tray) return;
+  tray.setToolTip(wakeWordReady ? "JARVIS AI — listening for Hey JARVIS" : "JARVIS AI — running in the system tray");
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: "Open JARVIS", click: () => showJarvisWindow(true) },
+    { label: trayWakeLabel(), enabled: false },
+    { type: "separator" },
+    { label: "Check for desktop update", click: () => { showJarvisWindow(); checkForDesktopUpdate(true); } },
+    { type: "separator" },
+    { label: "Exit JARVIS", click: () => app.quit() },
+  ]));
+}
+
+function ensureTray() {
+  if (tray) {
+    refreshTray();
+    return;
+  }
+  tray = new Tray(iconPath());
+  tray.setTitle("JARVIS");
+  tray.on("click", () => showJarvisWindow(true));
+  tray.on("double-click", () => showJarvisWindow(true));
+  refreshTray();
+}
+
+function destroyTray() {
+  if (!tray) return;
+  tray.destroy();
+  tray = null;
+}
+
+function hideJarvisToTray() {
+  if (!currentWindow || currentWindow.isDestroyed()) return;
+  ensureTray();
+  currentWindow.setSkipTaskbar(true);
+  currentWindow.hide();
+  refreshTray();
+  if (trayNoticeShown || !Notification.isSupported()) return;
+  trayNoticeShown = true;
+  new Notification({
+    title: "JARVIS is active in the system tray",
+    body: wakeWordReady ? "Hey JARVIS is listening. Say the wake phrase to bring JARVIS forward." : "Select the tray icon to reopen JARVIS.",
+    icon: iconPath(),
+    silent: true,
+  }).show();
+}
+
+function sendWakeWordEvent(channel, payload) {
+  if (!currentWindow || currentWindow.isDestroyed() || !trustedWebsiteUrl) return;
+  if (!sameTrustedOrigin(currentWindow.webContents.getURL(), trustedWebsiteUrl)) return;
+  if (channel === "jarvis:wake-word") showJarvisWindow(true);
+  currentWindow.webContents.send(channel, payload);
+}
+
+function stopWakeWordProcess() {
+  const child = wakeWordProcess;
+  wakeWordProcess = null;
+  wakeWordOutput = "";
+  wakeWordReady = false;
+  refreshTray();
+  if (!child) return;
+  child.removeAllListeners();
+  if (child.stdout) child.stdout.removeAllListeners();
+  if (child.stderr) child.stderr.removeAllListeners();
+  try { child.kill(); } catch {}
+}
+
+function handleWakeWordOutput(chunk) {
+  wakeWordOutput += String(chunk || "").replace(/\u0000/g, "");
+  const lines = wakeWordOutput.split(/\r?\n/);
+  wakeWordOutput = lines.pop() || "";
+  for (const line of lines) {
+    if (line.startsWith("JARVIS_READY|")) {
+      wakeWordReady = true;
+      refreshTray();
+      sendWakeWordEvent("jarvis:wake-word-status", { status: "listening", engine: "windows", language: line.slice(13, 29) });
+      continue;
+    }
+    if (!line.startsWith("JARVIS_WAKE|")) continue;
+    try {
+      const transcript = Buffer.from(line.slice(12), "base64").toString("utf8").slice(0, 500);
+      sendWakeWordEvent("jarvis:wake-word", { transcript, engine: "windows" });
+    } catch {}
+  }
+}
+
+function startWakeWordProcess() {
+  if (wakeWordProcess) return { status: "listening", engine: "windows" };
+  const child = spawn(
+    windowsPath("WindowsPowerShell\\v1.0\\powershell.exe"),
+    ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", wakeWordScriptPath()],
+    { windowsHide: true, shell: false, stdio: ["ignore", "pipe", "pipe"] },
+  );
+  wakeWordProcess = child;
+  wakeWordOutput = "";
+  wakeWordReady = false;
+  refreshTray();
+  let errorDetail = "";
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", handleWakeWordOutput);
+  child.stderr.on("data", (chunk) => { errorDetail = `${errorDetail}${chunk}`.slice(-1_000); });
+  child.once("error", (error) => {
+    if (wakeWordProcess === child) wakeWordProcess = null;
+    wakeWordReady = false;
+    refreshTray();
+    sendWakeWordEvent("jarvis:wake-word-status", { status: "error", message: String(error.message || "Windows wake-word recognition could not start.").slice(0, 240) });
+  });
+  child.once("exit", (code) => {
+    if (wakeWordProcess !== child) return;
+    wakeWordProcess = null;
+    wakeWordReady = false;
+    refreshTray();
+    sendWakeWordEvent("jarvis:wake-word-status", {
+      status: code === 0 ? "stopped" : "error",
+      message: code === 0 ? "" : (errorDetail.trim() || "Windows wake-word recognition stopped unexpectedly.").slice(0, 240),
+    });
+  });
+  return { status: "starting", engine: "windows" };
+}
+
+async function setWakeWordFromDesktop(event, enabled) {
+  requireJarvisSender(event);
+  if (!enabled) {
+    stopWakeWordProcess();
+    return { status: "stopped", engine: "windows" };
+  }
+  return startWakeWordProcess();
 }
 
 function validateJarvisSender(event) {
@@ -408,6 +570,10 @@ async function desktopCapabilities(event) {
     confirmationRequired: true,
     screenCapture: true,
     itHealthCheck: true,
+    wakeWord: true,
+    wakeWordEngine: "windows",
+    systemTray: true,
+    wakeWordWhileHidden: true,
     settings: publicTargets(SETTING_TARGETS),
     controlPanels: publicTargets(CONTROL_TARGETS),
     tools: publicTargets(TOOL_TARGETS),
@@ -599,6 +765,8 @@ function showWhenReady(window) {
 }
 
 function createSetupWindow(message = "") {
+  stopWakeWordProcess();
+  destroyTray();
   if (currentWindow && !currentWindow.isDestroyed()) currentWindow.destroy();
   trustedWebsiteUrl = null;
   currentWindow = new BrowserWindow({
@@ -619,7 +787,7 @@ function createSetupWindow(message = "") {
   showWhenReady(currentWindow);
   if (message) currentWindow.loadFile(SETUP_FILE, { query: { message } });
   else currentWindow.loadFile(SETUP_FILE);
-  currentWindow.on("closed", () => { currentWindow = null; });
+  currentWindow.on("closed", () => { stopWakeWordProcess(); currentWindow = null; });
 }
 
 function configureTrustedSession(websiteUrl) {
@@ -638,6 +806,7 @@ function configureTrustedSession(websiteUrl) {
 }
 
 function createJarvisWindow(websiteUrl) {
+  stopWakeWordProcess();
   if (currentWindow && !currentWindow.isDestroyed()) currentWindow.destroy();
   trustedWebsiteUrl = websiteUrl;
   configureTrustedSession(websiteUrl);
@@ -680,7 +849,12 @@ function createJarvisWindow(websiteUrl) {
   });
   showWhenReady(currentWindow);
   currentWindow.loadURL(websiteUrl);
-  currentWindow.on("closed", () => { currentWindow = null; });
+  ensureTray();
+  currentWindow.on("minimize", (event) => {
+    event.preventDefault();
+    hideJarvisToTray();
+  });
+  currentWindow.on("closed", () => { stopWakeWordProcess(); currentWindow = null; });
 }
 
 function saveWebsiteFromSetup(event, rawUrl) {
@@ -764,11 +938,10 @@ if (!hasSingleInstanceLock) {
   ipcMain.handle("jarvis:run-it-health-check", runItHealthCheckFromDesktop);
   ipcMain.handle("jarvis:capture-screen", captureScreenFromDesktop);
   ipcMain.handle("jarvis:power-action", runPowerActionFromDesktop);
+  ipcMain.handle("jarvis:set-wake-word", setWakeWordFromDesktop);
   app.on("second-instance", () => {
     if (!currentWindow || currentWindow.isDestroyed()) return;
-    if (currentWindow.isMinimized()) currentWindow.restore();
-    currentWindow.show();
-    currentWindow.focus();
+    showJarvisWindow(true);
   });
   app.whenReady().then(() => {
     installApplicationMenu();
@@ -787,8 +960,10 @@ if (!hasSingleInstanceLock) {
     if (websiteUrl) createJarvisWindow(websiteUrl);
     else createSetupWindow();
   });
-  app.on("window-all-closed", () => app.quit());
+  app.on("window-all-closed", () => { stopWakeWordProcess(); destroyTray(); app.quit(); });
   app.on("before-quit", (event) => {
+    const wakeWasActive = Boolean(wakeWordProcess);
+    stopWakeWordProcess();
     if (!pendingUpdate || updateInstallLaunched) return;
     event.preventDefault();
     if (updateQuitInProgress) return;
@@ -801,6 +976,9 @@ if (!hasSingleInstanceLock) {
       .catch(async (error) => {
         updateQuitInProgress = false;
         if (!currentWindow || currentWindow.isDestroyed()) return;
+        ensureTray();
+        if (wakeWasActive) startWakeWordProcess();
+        showJarvisWindow(true);
         await dialog.showMessageBox(currentWindow, {
           type: "error",
           title: "JARVIS update could not start",
@@ -812,4 +990,5 @@ if (!hasSingleInstanceLock) {
         });
       });
   });
+  app.on("will-quit", destroyTray);
 }

@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.11\.2/);
+  assert.match(html, /BUILD 1\.12\.1/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.11.2");
+  assert.equal((await health.json()).build, "1.12.1");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.11.2");
+  assert.equal(manifest.websiteBuild, "1.12.1");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -194,6 +194,15 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /id="helpSearch"/);
   assert.match(html, /id="copyHelp"/);
   assert.match(html, /id="saveHelp"/);
+  assert.match(html, /id="wakeWordEnabled"/);
+  assert.match(html, /id="wakeStatus"/);
+  assert.match(html, /HEY JARVIS ARMED/);
+  assert.match(html, /function startWakeWordListener/);
+  assert.match(html, /function handleWakeWord/);
+  assert.match(html, /Wake-word detection pauses while JARVIS speaks/);
+  assert.match(html, /wakeWordEnabled:state\.settings\.wakeWordEnabled===true/);
+  assert.match(html, /desktopWakeApi\(\)\)updateWakeStatus\("armed"/);
+  assert.match(html, /Windows system-tray listener/);
   assert.match(html, /class="help-scroll" id="helpScroll"/);
   assert.match(html, /\.settings\.help-center\{display:flex;flex-direction:column/);
   assert.match(html, /\.help-center \.settings-head\{flex:0 0 auto;position:static\}/);
@@ -202,7 +211,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.11\.2\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.12\.1\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -244,7 +253,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.11\.2"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.12\.1"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -264,8 +273,9 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const configureUpdateBatch = await readFile(new URL("../CONFIGURE_WINDOWS_AUTO_UPDATE.bat", import.meta.url), "utf8");
   const githubUploadBatch = await readFile(new URL("../UPLOAD_TO_GITHUB.bat", import.meta.url), "utf8");
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
+  const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.11.2");
+  assert.equal(desktopPackage.version, "1.12.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
   assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
   assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
@@ -292,6 +302,25 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(jarvisPreload, /jarvis:run-it-health-check/);
   assert.match(jarvisPreload, /jarvis:capture-screen/);
   assert.match(jarvisPreload, /jarvis:power-action/);
+  assert.match(jarvisPreload, /jarvis:set-wake-word/);
+  assert.match(jarvisPreload, /jarvis:wake-word/);
+  assert.match(desktopMain, /setWakeWordFromDesktop/);
+  assert.match(desktopMain, /wake-word-listener\.ps1/);
+  assert.match(desktopMain, /stopWakeWordProcess/);
+  assert.match(desktopMain, /\bTray\b/);
+  assert.match(desktopMain, /function ensureTray/);
+  assert.match(desktopMain, /function hideJarvisToTray/);
+  assert.match(desktopMain, /function showJarvisWindow/);
+  assert.match(desktopMain, /Hey JARVIS: Listening/);
+  assert.match(desktopMain, /currentWindow\.on\("minimize"/);
+  assert.match(desktopMain, /currentWindow\.setSkipTaskbar\(true\)/);
+  assert.match(desktopMain, /channel === "jarvis:wake-word"\) showJarvisWindow\(true\)/);
+  assert.match(desktopMain, /wakeWordWhileHidden: true/);
+  assert.match(wakeWordScript, /System\.Speech/);
+  assert.match(wakeWordScript, /hey jarvis/i);
+  assert.match(wakeWordScript, /Confidence -lt 0\.52/);
+  assert.ok(desktopPackage.build.files.includes("wake-word-listener.ps1"));
+  assert.ok(desktopPackage.build.extraResources.some((item) => item.to === "wake-word-listener.ps1"));
   assert.match(windowsControl, /SETTING_TARGETS/);
   assert.match(windowsControl, /CONTROL_ARGUMENTS/);
   assert.match(windowsControl, /TOOL_TARGETS/);
@@ -325,7 +354,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(updateManager, /compareVersions/);
   assert.match(updateManager, /validateUpdateManifest/);
   assert.match(updateManager, /isTrustedDownloadSource/);
-  assert.doesNotMatch(jarvisPreload, /ipcRenderer\.send|ipcRenderer\.on/);
+  assert.doesNotMatch(jarvisPreload, /ipcRenderer\.send/);
   assert.match(setupPreload, /contextBridge\.exposeInMainWorld/);
   assert.match(buildBatch, /npm run dist/);
   assert.match(configureUpdateBatch, /JARVIS_DESKTOP_MANIFEST_URL/);
@@ -703,5 +732,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.11.2", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.12.1", ai: false });
 });

@@ -1,6 +1,6 @@
 {
   "name": "jarvis-ai-desktop",
-  "version": "1.11.2",
+  "version": "1.12.1",
   "description": "Secure Windows desktop shell for the JARVIS Cloudflare AI system",
   "main": "main.cjs",
   "private": true,
@@ -35,7 +35,8 @@
       "setup.html",
       "update-manager.cjs",
       "url-config.cjs",
-      "windows-control.cjs"
+      "windows-control.cjs",
+      "wake-word-listener.ps1"
     ],
     "extraResources": [
       {
@@ -45,6 +46,10 @@
       {
         "from": "../JARVIS_WEBSITE_URL.txt",
         "to": "JARVIS_WEBSITE_URL.txt"
+      },
+      {
+        "from": "wake-word-listener.ps1",
+        "to": "wake-word-listener.ps1"
       }
     ],
     "win": {
