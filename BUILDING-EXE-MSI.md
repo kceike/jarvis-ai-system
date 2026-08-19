@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.10.1 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.10.2 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.10.1-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.10.1-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.10.2-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.10.2-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.10.1 update-test release and Windows Command Center are additive: every earlier JARVIS feature and command remains present. After an update-driven restart, JARVIS displays a confirmation containing the installed desktop version. Utilities and folders use fixed native targets, diagnostics use fixed executable/argument pairs with no command shell, and session or power actions require two confirmation dialogs that default to Cancel. Power actions do not use the force-close switch, but you must still save your work before confirming them.
+The v1.10.2 update-verification release and Windows Command Center are additive: every earlier JARVIS feature and command remains present. After an update-driven restart, JARVIS displays a confirmation containing the installed desktop version. Utilities and folders use fixed native targets, diagnostics use fixed executable/argument pairs with no command shell, and session or power actions require two confirmation dialogs that default to Cancel. Power actions do not use the force-close switch, but you must still save your work before confirming them.
 
 ## Build with GitHub Actions
 
