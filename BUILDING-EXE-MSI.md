@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.12.1 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.12.2 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.12.1-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.12.1-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.12.2-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.12.2-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.12.1 voice upgrade is additive: every earlier JARVIS feature and command remains present. The installed Windows app keeps its fixed local wake-word process active when minimized to the visible system tray. The tray menu displays the microphone state, and a recognized wake phrase restores and focuses JARVIS. Exiting the app stops the process and every existing action confirmation remains enforced.
+The v1.12.2 stability upgrade is additive: every earlier JARVIS feature and command remains present. The installed Windows app keeps its fixed local wake-word process and renderer active when minimized to the visible system tray. Deferred native hide/focus transitions avoid the previous restore freeze, and reopening JARVIS cancels any pending hide. The tray menu displays the microphone state, and a recognized wake phrase restores and focuses JARVIS. Exiting the app stops the process and every existing action confirmation remains enforced.
 
 ## Build with GitHub Actions
 

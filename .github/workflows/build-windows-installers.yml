@@ -51,7 +51,7 @@ jobs:
             enabled = $true
             version = $version
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
-            notes = "JARVIS $version keeps the optional local Hey JARVIS listener active from the visible Windows system tray when minimized and restores JARVIS to the front after the wake phrase, with all previous capabilities and confirmations."
+            notes = "JARVIS $version fixes the minimize-to-tray restore freeze, keeps the renderer and optional local Hey JARVIS listener active while hidden, and restores JARVIS to the front after the wake phrase, with all previous capabilities and confirmations."
             installers = [ordered]@{
               exe = [ordered]@{ url = "$base/$($exe.Name)"; sha256 = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
               msi = [ordered]@{ url = "$base/$($msi.Name)"; sha256 = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }

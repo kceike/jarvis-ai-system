@@ -40,6 +40,7 @@ let wakeWordOutput = "";
 let wakeWordReady = false;
 let tray = null;
 let trayNoticeShown = false;
+let trayHideTimer = null;
 
 const START_APPS_COMMAND = "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress";
 const INSTALL_TYPE_COMMAND = "$paths=@('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'); Get-ItemProperty $paths -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -eq 'JARVIS AI'} | Select-Object DisplayName,WindowsInstaller,UninstallString | ConvertTo-Json -Compress";
@@ -110,20 +111,20 @@ function wakeWordScriptPath() {
 }
 
 function showJarvisWindow(forceToFront = false) {
-  if (!currentWindow || currentWindow.isDestroyed()) return;
-  currentWindow.setSkipTaskbar(false);
-  if (currentWindow.isMinimized()) currentWindow.restore();
-  if (!currentWindow.isVisible()) currentWindow.show();
-  currentWindow.focus();
-  if (!forceToFront) return;
-  try {
-    currentWindow.setAlwaysOnTop(true, "pop-up-menu");
-    currentWindow.moveTop();
-    const releaseTop = setTimeout(() => {
-      if (currentWindow && !currentWindow.isDestroyed()) currentWindow.setAlwaysOnTop(false);
-    }, 1_200);
-    releaseTop.unref();
-  } catch {}
+  const window = currentWindow;
+  if (!window || window.isDestroyed()) return;
+  clearTimeout(trayHideTimer);
+  trayHideTimer = null;
+  if (window.isMinimized()) window.restore();
+  if (!window.isVisible()) window.show();
+  const focusTimer = setTimeout(() => {
+    if (window.isDestroyed()) return;
+    window.focus();
+    if (forceToFront) {
+      try { window.moveTop(); } catch {}
+    }
+  }, 60);
+  focusTimer.unref();
 }
 
 function trayWakeLabel() {
@@ -158,25 +159,33 @@ function ensureTray() {
 }
 
 function destroyTray() {
+  clearTimeout(trayHideTimer);
+  trayHideTimer = null;
   if (!tray) return;
   tray.destroy();
   tray = null;
 }
 
 function hideJarvisToTray() {
-  if (!currentWindow || currentWindow.isDestroyed()) return;
+  const window = currentWindow;
+  if (!window || window.isDestroyed()) return;
   ensureTray();
-  currentWindow.setSkipTaskbar(true);
-  currentWindow.hide();
-  refreshTray();
-  if (trayNoticeShown || !Notification.isSupported()) return;
-  trayNoticeShown = true;
-  new Notification({
-    title: "JARVIS is active in the system tray",
-    body: wakeWordReady ? "Hey JARVIS is listening. Say the wake phrase to bring JARVIS forward." : "Select the tray icon to reopen JARVIS.",
-    icon: iconPath(),
-    silent: true,
-  }).show();
+  clearTimeout(trayHideTimer);
+  trayHideTimer = setTimeout(() => {
+    trayHideTimer = null;
+    if (window.isDestroyed() || currentWindow !== window) return;
+    window.hide();
+    refreshTray();
+    if (trayNoticeShown || !Notification.isSupported()) return;
+    trayNoticeShown = true;
+    new Notification({
+      title: "JARVIS is active in the system tray",
+      body: wakeWordReady ? "Hey JARVIS is listening. Say the wake phrase to bring JARVIS forward." : "Select the tray icon to reopen JARVIS.",
+      icon: iconPath(),
+      silent: true,
+    }).show();
+  }, 80);
+  trayHideTimer.unref();
 }
 
 function sendWakeWordEvent(channel, payload) {
@@ -822,6 +831,7 @@ function createJarvisWindow(websiteUrl) {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
+      backgroundThrottling: false,
       webviewTag: false,
       navigateOnDragDrop: false,
       spellcheck: true,
@@ -850,10 +860,7 @@ function createJarvisWindow(websiteUrl) {
   showWhenReady(currentWindow);
   currentWindow.loadURL(websiteUrl);
   ensureTray();
-  currentWindow.on("minimize", (event) => {
-    event.preventDefault();
-    hideJarvisToTray();
-  });
+  currentWindow.on("minimize", hideJarvisToTray);
   currentWindow.on("closed", () => { stopWakeWordProcess(); currentWindow = null; });
 }
 

@@ -1,4 +1,4 @@
-const VERSION = "jarvis-pwa-1.12.1";
+const VERSION = "jarvis-pwa-1.12.2";
 
 self.addEventListener("install", () => self.skipWaiting());
 
