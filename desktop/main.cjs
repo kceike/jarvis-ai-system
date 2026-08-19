@@ -218,24 +218,15 @@ async function downloadVerifiedInstaller(release, installer) {
   }
 }
 
-function powershellLiteral(value) {
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
-
 function launchDeferredInstaller(update) {
   if (!update || updateInstallLaunched || process.platform !== "win32") return Promise.resolve(false);
-  const installer = powershellLiteral(update.path);
-  const application = powershellLiteral(process.execPath);
-  const installerCommand = update.kind === "msi"
-    ? `$process=Start-Process -FilePath ${powershellLiteral(windowsPath("msiexec.exe"))} -ArgumentList @('/i',${installer},'/passive','/norestart') -Wait -PassThru`
-    : `$process=Start-Process -FilePath ${installer} -ArgumentList @('/S','--updated') -Wait -PassThru`;
-  const script = `$ErrorActionPreference='Stop'; try { Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue; ${installerCommand}; if($process.ExitCode -in @(0,3010)){ Start-Process -FilePath ${application} -ArgumentList @('--updated') } else { Start-Process -FilePath ${application} -ArgumentList @('--update-failed=installer') } } catch { Start-Process -FilePath ${application} -ArgumentList @('--update-failed=launcher') } finally { Remove-Item -LiteralPath ${installer} -Force -ErrorAction SilentlyContinue }`;
-  const encoded = Buffer.from(script, "utf16le").toString("base64");
+  const executable = update.kind === "msi" ? windowsPath("msiexec.exe") : update.path;
+  const args = update.kind === "msi" ? ["/i", update.path] : [];
   return new Promise((resolve, reject) => {
-    const child = spawn(windowsPath("WindowsPowerShell\\v1.0\\powershell.exe"), ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded], {
+    const child = spawn(executable, args, {
       detached: true,
       stdio: "ignore",
-      windowsHide: true,
+      windowsHide: false,
       shell: false,
     });
     child.once("error", reject);
@@ -253,7 +244,7 @@ async function presentPendingUpdate(manual) {
     if (Notification.isSupported()) {
       new Notification({
         title: `JARVIS ${pendingUpdate.version} is ready`,
-        body: "The verified update will install automatically when you close JARVIS.",
+        body: "The verified Windows installer will open when you close JARVIS.",
         icon: iconPath(),
       }).show();
     }
@@ -263,8 +254,8 @@ async function presentPendingUpdate(manual) {
     type: "info",
     title: "JARVIS update ready",
     message: `JARVIS ${pendingUpdate.version} is verified and ready to install.`,
-    detail: "Install now to restart JARVIS, or let it install automatically when you close the app.",
-    buttons: ["Install and restart", "Install when I close"],
+    detail: "Windows will open the verified installer, then JARVIS will close. Complete the installer and select Run JARVIS on its finish screen.",
+    buttons: ["Open installer and close JARVIS", "Later"],
     defaultId: 0,
     cancelId: 1,
     noLink: true,
@@ -624,7 +615,7 @@ function installApplicationMenu() {
           checked: automaticUpdatesEnabled(),
           click: (item) => setAutomaticUpdatesEnabled(item.checked),
         },
-        { label: "Install downloaded update now", enabled: Boolean(pendingUpdate), click: () => app.quit() },
+        { label: "Open downloaded Windows installer", enabled: Boolean(pendingUpdate), click: () => app.quit() },
         { type: "separator" },
         { role: "quit", label: "Exit JARVIS" },
       ],

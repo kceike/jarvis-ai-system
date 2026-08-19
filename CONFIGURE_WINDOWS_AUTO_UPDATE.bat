@@ -55,7 +55,7 @@ echo ============================================================
 echo SUCCESS: Windows automatic updates are connected.
 echo Existing JARVIS EXE/MSI apps check every six hours and when
 echo manually selected from JARVIS ^> Check for desktop update.
-echo Verified updates install automatically when JARVIS closes.
+echo The verified Windows installer opens when JARVIS closes.
 echo ============================================================
 echo.
 pause
