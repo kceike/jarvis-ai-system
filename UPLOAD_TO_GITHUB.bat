@@ -230,7 +230,7 @@ echo ============================================================
 echo SUCCESS: JARVIS was uploaded to:
 echo https://github.com/%JARVIS_GITHUB_REPOSITORY%
 echo.
-echo The v1.10.4 Windows update build was started automatically.
+echo The v1.11.0 Smart Upgrade Windows build was started automatically.
 echo The GitHub Actions page will open so you can watch its progress.
 echo ============================================================
 echo.

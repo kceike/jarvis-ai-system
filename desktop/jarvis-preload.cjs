@@ -11,5 +11,7 @@ contextBridge.exposeInMainWorld("jarvisDesktop", Object.freeze({
   openTool: (query) => ipcRenderer.invoke("jarvis:open-tool", String(query || "").slice(0, 120)),
   openFolder: (query) => ipcRenderer.invoke("jarvis:open-folder", String(query || "").slice(0, 120)),
   runDiagnostic: (query) => ipcRenderer.invoke("jarvis:run-diagnostic", String(query || "").slice(0, 120)),
+  runItHealthCheck: () => ipcRenderer.invoke("jarvis:run-it-health-check"),
+  captureScreen: () => ipcRenderer.invoke("jarvis:capture-screen"),
   powerAction: (query) => ipcRenderer.invoke("jarvis:power-action", String(query || "").slice(0, 120)),
 }));

@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.10\.4/);
+  assert.match(html, /BUILD 1\.11\.0/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.10.4");
+  assert.equal((await health.json()).build, "1.11.0");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.10.4");
+  assert.equal(manifest.websiteBuild, "1.11.0");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -188,11 +188,21 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /ResizeObserver/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /id="installApp"/);
+  assert.match(html, /id="missionModal"/);
+  assert.match(html, /id="missionControlEnabled"/);
+  assert.match(html, /id="screenVisionEnabled"/);
+  assert.match(html, /id="itCopilotEnabled"/);
+  assert.match(html, /id="proactiveBriefingEnabled"/);
+  assert.match(html, /\/api\/mission-plan/);
+  assert.match(html, /function runScreenVision/);
+  assert.match(html, /function runItCopilot/);
+  assert.match(html, /function runDailyBriefing/);
+  assert.match(html, /function missionCard/);
   assert.match(html, /beforeinstallprompt/);
   assert.match(html, /\.settings\{max-height:calc\(100vh - 36px\);max-height:calc\(100dvh - 36px\);min-height:0;overflow-x:hidden;overflow-y:auto/);
   assert.match(html, /\.settings-head\{background:#071318;position:sticky;top:0/);
   assert.match(html, /panel\.scrollTop=0/);
-  assert.match(html, /e\.key==="Escape"/);
+  assert.match(html, /e\.key(?:===|!==)"Escape"/);
   assert.match(html, /id="newChat"/);
   assert.match(html, /function newChat\(/);
   assert.match(html, /q\("#newChat"\)\.onclick=function\(\)\{newChat\(\)\}/);
@@ -219,7 +229,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.10\.4"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.11\.0"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -240,7 +250,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const githubUploadBatch = await readFile(new URL("../UPLOAD_TO_GITHUB.bat", import.meta.url), "utf8");
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.10.4");
+  assert.equal(desktopPackage.version, "1.11.0");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
   assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
   assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
@@ -264,6 +274,8 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(jarvisPreload, /jarvis:open-tool/);
   assert.match(jarvisPreload, /jarvis:open-folder/);
   assert.match(jarvisPreload, /jarvis:run-diagnostic/);
+  assert.match(jarvisPreload, /jarvis:run-it-health-check/);
+  assert.match(jarvisPreload, /jarvis:capture-screen/);
   assert.match(jarvisPreload, /jarvis:power-action/);
   assert.match(windowsControl, /SETTING_TARGETS/);
   assert.match(windowsControl, /CONTROL_ARGUMENTS/);
@@ -277,6 +289,10 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(desktopMain, /jarvis:open-tool/);
   assert.match(desktopMain, /jarvis:open-folder/);
   assert.match(desktopMain, /jarvis:run-diagnostic/);
+  assert.match(desktopMain, /desktopCapturer\.getSources/);
+  assert.match(desktopMain, /IT_HEALTH_CHECK_COMMANDS/);
+  assert.match(desktopMain, /jarvis:run-it-health-check/);
+  assert.match(desktopMain, /jarvis:capture-screen/);
   assert.match(desktopMain, /jarvis:power-action/);
   assert.match(desktopMain, /api\/desktop-update/);
   assert.match(desktopMain, /downloadVerifiedInstaller/);
@@ -464,6 +480,55 @@ test("returns a safe demo response without an AI binding", async () => {
   assert.match(data.response, /At your service/);
 });
 
+test("creates a safe fallback Mission Control plan without an AI binding", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/mission-plan", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ goal: "Check the Windows PC health and explain any screen error" }),
+  });
+  const response = await worker.fetch(request, AUTH_ENV);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.demo, true);
+  assert.equal(data.mission.status, "draft");
+  assert.ok(data.mission.steps.length >= 3);
+  assert.ok(data.mission.steps.some((step) => step.suggestedCommand === "/itcheck"));
+  assert.ok(data.mission.steps.some((step) => step.suggestedCommand.startsWith("/screen")));
+  assert.ok(data.mission.steps.every((step) => !/^\/(?:pc|iot)\b/i.test(step.suggestedCommand)));
+});
+
+test("sanitizes unsafe commands returned by the Mission Control model", async () => {
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async run() {
+        return {
+          response: JSON.stringify({
+            summary: "Review the proposed actions.",
+            steps: [
+              { title: "Unsafe power action", description: "Must be removed", risk: "high", requiresApproval: true, suggestedCommand: "/pc restart" },
+              { title: "Unsafe address", description: "Must be removed", risk: "high", requiresApproval: true, suggestedCommand: "/open javascript:alert(1)" },
+              { title: "Read-only health check", description: "Allowed", risk: "medium", requiresApproval: true, suggestedCommand: "/itcheck" },
+            ],
+          }),
+        };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/mission-plan", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ goal: "Review my PC" }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.demo, false);
+  assert.equal(data.mission.steps[0].suggestedCommand, "");
+  assert.equal(data.mission.steps[1].suggestedCommand, "");
+  assert.equal(data.mission.steps[2].suggestedCommand, "/itcheck");
+});
+
 test("routes an allowed model and includes Memory Vault context", async () => {
   let selectedModel = "";
   let systemPrompt = "";
@@ -623,5 +688,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.10.4", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.11.0", ai: false });
 });

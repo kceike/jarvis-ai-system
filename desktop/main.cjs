@@ -1,6 +1,6 @@
 "use strict";
 
-const { app, BrowserWindow, dialog, ipcMain, Menu, net, Notification, session, shell } = require("electron");
+const { app, BrowserWindow, desktopCapturer, dialog, ipcMain, Menu, net, Notification, screen, session, shell } = require("electron");
 const { execFile, spawn } = require("node:child_process");
 const { createHash } = require("node:crypto");
 const { createWriteStream, mkdirSync, readFileSync, writeFileSync, unlinkSync } = require("node:fs");
@@ -41,6 +41,30 @@ const INSTALL_TYPE_COMMAND = "$paths=@('HKCU:\\Software\\Microsoft\\Windows\\Cur
 const APP_CACHE_TTL_MS = 60_000;
 const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1_000;
 const UPDATE_MAX_BYTES = 500 * 1024 * 1024;
+const IT_HEALTH_CHECK_COMMANDS = Object.freeze([
+  Object.freeze({
+    name: "Windows and hardware",
+    executable: "systeminfo.exe",
+    args: Object.freeze([]),
+  }),
+  Object.freeze({
+    name: "Network configuration",
+    executable: "ipconfig.exe",
+    args: Object.freeze(["/all"]),
+  }),
+  Object.freeze({
+    name: "Storage health",
+    powershell: "$ErrorActionPreference='SilentlyContinue'; Get-CimInstance Win32_LogicalDisk -Filter \"DriveType=3\" | Select-Object DeviceID,VolumeName,@{N='SizeGB';E={[math]::Round($_.Size/1GB,1)}},@{N='FreeGB';E={[math]::Round($_.FreeSpace/1GB,1)}},@{N='FreePercent';E={if($_.Size){[math]::Round(100*$_.FreeSpace/$_.Size,1)}else{0}}} | Format-Table -AutoSize | Out-String -Width 180",
+  }),
+  Object.freeze({
+    name: "Automatic services not running",
+    powershell: "$ErrorActionPreference='SilentlyContinue'; Get-CimInstance Win32_Service | Where-Object {$_.StartMode -eq 'Auto' -and $_.State -ne 'Running'} | Select-Object -First 30 Name,DisplayName,State,StartMode | Format-Table -AutoSize | Out-String -Width 180",
+  }),
+  Object.freeze({
+    name: "Recent Windows system warnings and errors",
+    powershell: "$ErrorActionPreference='SilentlyContinue'; Get-WinEvent -FilterHashtable @{LogName='System';Level=1,2,3;StartTime=(Get-Date).AddDays(-2)} | Select-Object -First 20 TimeCreated,Id,ProviderName,LevelDisplayName,@{N='Message';E={($_.Message -replace '\\s+',' ').Substring(0,[Math]::Min(500,($_.Message -replace '\\s+',' ').Length))}} | Format-List | Out-String -Width 200",
+  }),
+]);
 
 function websiteFile() {
   return join(app.getPath("userData"), "website.url");
@@ -382,12 +406,82 @@ async function desktopCapabilities(event) {
     automaticUpdates: automaticUpdatesEnabled(),
     updateReady: pendingUpdate ? pendingUpdate.version : "",
     confirmationRequired: true,
+    screenCapture: true,
+    itHealthCheck: true,
     settings: publicTargets(SETTING_TARGETS),
     controlPanels: publicTargets(CONTROL_TARGETS),
     tools: publicTargets(TOOL_TARGETS),
     folders: publicTargets(FOLDER_TARGETS),
     diagnostics: publicTargets(DIAGNOSTIC_TARGETS),
     powerActions: publicTargets(POWER_TARGETS),
+  };
+}
+
+async function captureScreenFromDesktop(event) {
+  requireJarvisSender(event);
+  const approved = await dialog.showMessageBox(currentWindow, {
+    type: "question",
+    title: "JARVIS Screen Vision",
+    message: "Capture the primary screen for one-time AI analysis?",
+    detail: "JARVIS will capture one reduced-size image after you confirm. It will be sent to your configured JARVIS AI provider with your question. Continuous recording is never enabled.",
+    buttons: ["Capture once", "Cancel"],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true,
+  });
+  if (approved.response !== 0) return { status: "cancelled", target: "Primary screen" };
+
+  const display = screen.getPrimaryDisplay();
+  const scale = Math.min(1, 1600 / Math.max(1, display.size.width), 1000 / Math.max(1, display.size.height));
+  const thumbnailSize = {
+    width: Math.max(1, Math.round(display.size.width * scale)),
+    height: Math.max(1, Math.round(display.size.height * scale)),
+  };
+  const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize, fetchWindowIcons: false });
+  const source = sources.find((candidate) => String(candidate.display_id) === String(display.id)) || sources[0];
+  if (!source || source.thumbnail.isEmpty()) throw new Error("Windows did not return a usable screen image.");
+  const jpeg = source.thumbnail.toJPEG(82);
+  if (jpeg.byteLength > 2_000_000) throw new Error("The screen image exceeded JARVIS's 2 MB vision safety limit.");
+  return {
+    status: "captured",
+    target: source.name || "Primary screen",
+    width: thumbnailSize.width,
+    height: thumbnailSize.height,
+    dataUrl: `data:image/jpeg;base64,${jpeg.toString("base64")}`,
+  };
+}
+
+async function runItHealthCheckFromDesktop(event) {
+  requireJarvisSender(event);
+  const approved = await dialog.showMessageBox(currentWindow, {
+    type: "question",
+    title: "JARVIS Windows IT Copilot",
+    message: "Run the read-only Windows IT health check?",
+    detail: "The check reads Windows, network, storage, service, and recent System event information. It does not repair, stop, install, delete, or change anything. The report may be sent to your configured AI provider for analysis.",
+    buttons: ["Run health check", "Cancel"],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  });
+  if (approved.response !== 0) return { status: "cancelled", target: "Windows IT health check" };
+
+  const results = await Promise.allSettled(IT_HEALTH_CHECK_COMMANDS.map((check) =>
+    check.powershell
+      ? runPowerShell(check.powershell)
+      : runCaptured(windowsPath(check.executable), [...check.args]),
+  ));
+  const sections = IT_HEALTH_CHECK_COMMANDS.map((check, index) => {
+    const result = results[index];
+    const output = result.status === "fulfilled"
+      ? String(result.value || "No findings returned.").trim()
+      : `Check unavailable: ${String(result.reason?.message || result.reason || "Unknown error").slice(0, 1_000)}`;
+    return `### ${check.name}\n${output.slice(0, 18_000)}`;
+  });
+  return {
+    status: "completed",
+    target: "Windows IT health check",
+    sections: sections.length,
+    output: sections.join("\n\n").slice(0, 60_000),
   };
 }
 
@@ -667,6 +761,8 @@ if (!hasSingleInstanceLock) {
   ipcMain.handle("jarvis:open-tool", openToolFromDesktop);
   ipcMain.handle("jarvis:open-folder", openFolderFromDesktop);
   ipcMain.handle("jarvis:run-diagnostic", runDiagnosticFromDesktop);
+  ipcMain.handle("jarvis:run-it-health-check", runItHealthCheckFromDesktop);
+  ipcMain.handle("jarvis:capture-screen", captureScreenFromDesktop);
   ipcMain.handle("jarvis:power-action", runPowerActionFromDesktop);
   app.on("second-instance", () => {
     if (!currentWindow || currentWindow.isDestroyed()) return;

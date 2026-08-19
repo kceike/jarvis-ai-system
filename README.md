@@ -16,6 +16,11 @@ An original, responsive personal AI, coding copilot, image generator, and voice 
 - Cloudflare Vectorize semantic embeddings for meaning-based synchronized memory retrieval
 - Multimodal text, microphone, source-file, and PNG/JPEG/WebP vision input
 - Responsive multimodal agent matrix showing the real orchestrator, memory, and tool flow
+- Mission Control that converts goals into reviewable steps, preserves mission status across synchronized devices, and runs only approved allowlisted commands
+- One-time Screen Vision for a user-approved desktop or browser screen capture, with continuous recording disabled
+- Windows IT Copilot that collects five fixed read-only health sections and asks the AI for an evidence-based support analysis
+- Daily proactive briefing with weather, desktop-update status, active missions, and pending human reviews
+- Smart Skills Dashboard for enabling or disabling Mission Control, Screen Vision, Windows IT Copilot, and proactive briefings
 - Coding copilot for writing, reviewing, debugging, and explaining code
 - Text-to-image generation
 - Six selectable Cloudflare text models for economy, speed, general work, stronger answers, reasoning, and coding
@@ -118,8 +123,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.10.4-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.10.4-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.11.0-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.11.0-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -127,7 +132,14 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.10.4 verifies the direct visible Windows-installer handoff and retains every earlier JARVIS capability. Chat, voice, weather, website launching, Settings, Control Panel, installed apps, AI modes, memory, synchronization, the Windows Command Center, and every earlier smart command remain active.
+Version 1.11.0 adds Mission Control, one-time Screen Vision, Windows IT Copilot, daily briefings, and the Smart Skills Dashboard. It retains the verified visible Windows-installer handoff and every earlier JARVIS capability: chat, voice, weather, website launching, Settings, Control Panel, installed apps, AI modes, memory, synchronization, Windows Command Center, and every previous smart command.
+
+- `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
+- `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
+- `/screen [question]` — capture one selected screen for vision analysis. The Electron app shows a native confirmation that defaults to **Cancel**; browsers show their own screen picker. JARVIS never enables continuous recording.
+- `/itcheck` — collect fixed read-only Windows, network, storage, service, and recent System event information, then request an AI support analysis. No repair is performed automatically.
+- `/briefing` — show the current weather, desktop/update link status, active mission count, and pending human reviews. When enabled, JARVIS creates this once per local day.
+- `/skills` — show the current Smart Skills status. Open Settings to change individual skills.
 
 - `/settings` or “open Windows settings” — open Settings home.
 - `/settings bluetooth`, `/settings display`, `/settings privacy`, `/settings update history`, and similar requests — open an allowlisted Settings page.

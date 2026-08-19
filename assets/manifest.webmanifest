@@ -2,7 +2,7 @@
   "id": "/",
   "name": "JARVIS Personal Intelligence System",
   "short_name": "JARVIS",
-  "description": "A private multimodal AI, coding copilot, voice assistant, semantic memory, and approved tool system.",
+  "description": "A private multimodal AI with Mission Control, screen vision, Windows IT Copilot, voice, semantic memory, and approved tools.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
