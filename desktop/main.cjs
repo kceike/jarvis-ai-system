@@ -633,6 +633,23 @@ function installApplicationMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+function showSuccessfulUpdateConfirmation() {
+  if (!process.argv.includes("--updated")) return;
+  const timer = setTimeout(() => {
+    if (!currentWindow || currentWindow.isDestroyed()) return;
+    dialog.showMessageBox(currentWindow, {
+      type: "info",
+      title: "JARVIS update complete",
+      message: "Update test successful",
+      detail: `JARVIS desktop version ${app.getVersion()} is now installed and running.`,
+      buttons: ["Continue"],
+      defaultId: 0,
+      noLink: true,
+    });
+  }, 1_500);
+  timer.unref();
+}
+
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
   app.quit();
@@ -664,6 +681,7 @@ if (!hasSingleInstanceLock) {
     if (websiteUrl) createJarvisWindow(websiteUrl);
     else createSetupWindow();
     scheduleAutomaticUpdateChecks();
+    showSuccessfulUpdateConfirmation();
   });
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length) return;

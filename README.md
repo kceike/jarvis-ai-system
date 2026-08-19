@@ -118,8 +118,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.10.0-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.10.0-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.10.1-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.10.1-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -127,7 +127,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.10.0 adds verified automatic desktop updating without removing or limiting any earlier JARVIS capability. Chat, voice, weather, website launching, Settings, Control Panel, installed apps, AI modes, memory, synchronization, the Windows Command Center, and every earlier smart command remain active.
+Version 1.10.1 is the automatic-update test release and retains every earlier JARVIS capability. After an update-driven restart, a native confirmation displays the installed desktop version. Chat, voice, weather, website launching, Settings, Control Panel, installed apps, AI modes, memory, synchronization, the Windows Command Center, and every earlier smart command remain active.
 
 - `/settings` or “open Windows settings” — open Settings home.
 - `/settings bluetooth`, `/settings display`, `/settings privacy`, `/settings update history`, and similar requests — open an allowlisted Settings page.
@@ -146,10 +146,10 @@ You may also upload the project to GitHub and run the included **Build JARVIS Wi
 
 ### Automatic EXE/MSI updates
 
-Install JARVIS 1.10.0 manually once because an older executable cannot add an updater to itself. Then:
+Install JARVIS 1.10.0 or later manually once because an older executable cannot add an updater to itself. Then:
 
 1. Upload the complete project to a public GitHub repository.
-2. Run **Actions → Build JARVIS Windows Installers**. The workflow publishes the EXE, MSI, and their SHA-256 update manifest as a GitHub Release.
+2. Run `UPLOAD_TO_GITHUB.bat`. It can safely attach a freshly extracted ZIP to the existing repository history, uploads the new version, and starts **Build JARVIS Windows Installers** automatically. The workflow publishes the EXE, MSI, and their SHA-256 update manifest as a GitHub Release.
 3. Double-click `CONFIGURE_WINDOWS_AUTO_UPDATE.bat`, enter the repository as `owner/repository`, and allow it to redeploy the Cloudflare update endpoint.
 
 The installed app checks its linked JARVIS website shortly after launch and every six hours. When the website reports a higher stable desktop version, JARVIS chooses the matching EXE or MSI, downloads it over HTTPS, verifies its SHA-256, and installs it automatically when you close the app. Select **Alt → JARVIS → Check for desktop update** for an immediate check or clear **Automatic desktop updates** to disable background checks.

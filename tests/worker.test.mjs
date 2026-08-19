@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.10\.0/);
+  assert.match(html, /BUILD 1\.10\.1/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.10.0");
+  assert.equal((await health.json()).build, "1.10.1");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.10.0");
+  assert.equal(manifest.websiteBuild, "1.10.1");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -219,7 +219,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.10\.0"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.10\.1"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -240,7 +240,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const githubUploadBatch = await readFile(new URL("../UPLOAD_TO_GITHUB.bat", import.meta.url), "utf8");
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.10.0");
+  assert.equal(desktopPackage.version, "1.10.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
   assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
   assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
@@ -284,6 +284,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(desktopMain, /UPDATE_MAX_BYTES/);
   assert.match(desktopMain, /Automatic desktop updates/);
   assert.match(desktopMain, /launchDeferredInstaller/);
+  assert.match(desktopMain, /Update test successful/);
   assert.match(updateManager, /compareVersions/);
   assert.match(updateManager, /validateUpdateManifest/);
   assert.doesNotMatch(jarvisPreload, /ipcRenderer\.send|ipcRenderer\.on/);
@@ -297,10 +298,14 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(githubUploadBatch, /gh api user --jq \.login/);
   assert.match(githubUploadBatch, /git add -A/);
   assert.match(githubUploadBatch, /git push -u origin main/);
+  assert.match(githubUploadBatch, /gh workflow run/);
   assert.match(githubUploadBatch, /gh repo view/);
   assert.match(githubUploadBatch, /gh repo create/);
   assert.match(githubUploadBatch, /!gh auth git-credential/);
-  assert.match(githubUploadBatch, /will not overwrite it automatically/);
+  assert.match(githubUploadBatch, /git reset --mixed origin\/main/);
+  assert.match(githubUploadBatch, /git add --ignore-removal/);
+  assert.match(githubUploadBatch, /jarvis-local-safety-backup/);
+  assert.match(githubUploadBatch, /git restore --worktree/);
   assert.match(workflow, /runs-on: windows-latest/);
   assert.match(workflow, /desktop\/dist\/\*\.msi/);
   assert.match(workflow, /jarvis-desktop-update\.json/);
@@ -609,5 +614,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.10.0", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.10.1", ai: false });
 });

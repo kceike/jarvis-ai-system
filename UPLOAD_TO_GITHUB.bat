@@ -70,7 +70,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [1/7] Checking the secure GitHub browser login...
+echo [1/8] Checking the secure GitHub browser login...
 gh auth status --hostname github.com >nul 2>nul
 if errorlevel 1 (
   echo Your browser will open. Sign in to the GitHub account kceike.
@@ -109,7 +109,7 @@ gh auth setup-git
 if errorlevel 1 goto :failed
 
 echo.
-echo [2/7] Verifying the destination repository through GitHub...
+echo [2/8] Verifying the destination repository through GitHub...
 gh repo view "%JARVIS_GITHUB_REPOSITORY%" --json nameWithOwner --jq .nameWithOwner >nul 2>nul
 if errorlevel 1 (
   echo The repository is not available to the active account. Creating it now...
@@ -121,7 +121,9 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/7] Preparing the local JARVIS repository...
+echo [3/8] Preparing the local JARVIS repository...
+set "JARVIS_REMOTE_MAIN="
+set "JARVIS_ADOPTED_REMOTE_HISTORY="
 if not exist ".git" (
   git init
   if errorlevel 1 goto :failed
@@ -145,7 +147,7 @@ git branch -M main
 if errorlevel 1 goto :failed
 
 echo.
-echo [4/7] Linking https://github.com/%JARVIS_GITHUB_REPOSITORY% ...
+echo [4/8] Linking https://github.com/%JARVIS_GITHUB_REPOSITORY% ...
 git remote get-url origin >nul 2>nul
 if errorlevel 1 (
   git remote add origin "%JARVIS_GITHUB_REMOTE%"
@@ -155,8 +157,38 @@ if errorlevel 1 (
 if errorlevel 1 goto :failed
 
 echo.
-echo [5/7] Staging changed JARVIS files...
-git add -A
+echo [5/8] Aligning this folder with the existing GitHub history...
+git ls-remote --exit-code --heads origin main >nul 2>nul
+if not errorlevel 1 (
+  set "JARVIS_REMOTE_MAIN=1"
+  git fetch origin main
+  if errorlevel 1 goto :failed
+
+  git rev-parse --verify HEAD >nul 2>nul
+  if errorlevel 1 (
+    set "JARVIS_ADOPTED_REMOTE_HISTORY=1"
+  ) else (
+    git merge-base HEAD origin/main >nul 2>nul
+    if errorlevel 1 set "JARVIS_ADOPTED_REMOTE_HISTORY=1"
+  )
+
+  if defined JARVIS_ADOPTED_REMOTE_HISTORY (
+    echo Fresh ZIP history detected. Safely attaching these files to origin/main...
+    git rev-parse --verify HEAD >nul 2>nul
+    if not errorlevel 1 git branch -f jarvis-local-safety-backup HEAD >nul 2>nul
+    git reset --mixed origin/main
+    if errorlevel 1 goto :failed
+  )
+)
+
+echo.
+echo [6/8] Staging changed JARVIS files...
+if defined JARVIS_ADOPTED_REMOTE_HISTORY (
+  rem Preserve any GitHub-only tracked files while overlaying the refreshed ZIP.
+  git add --ignore-removal .
+) else (
+  git add -A
+)
 if errorlevel 1 goto :failed
 
 for /f "delims=" %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "JARVIS_UPLOAD_TIME=%%T"
@@ -168,21 +200,7 @@ if errorlevel 1 (
   echo No new local file changes require a commit.
 )
 
-echo.
-echo [6/7] Checking the GitHub repository...
-git ls-remote --exit-code --heads origin main >nul 2>nul
-if not errorlevel 1 (
-  git fetch origin main
-  if errorlevel 1 goto :failed
-  git merge-base HEAD origin/main >nul 2>nul
-  if errorlevel 1 (
-    echo.
-    echo [STOPPED] GitHub already contains a different upload history.
-    echo This safety check will not overwrite it automatically.
-    echo For the first automatic upload, use a new empty repository or
-    echo delete the manually uploaded files and recreate the repository.
-    goto :failed
-  )
+if defined JARVIS_REMOTE_MAIN if not defined JARVIS_ADOPTED_REMOTE_HISTORY (
   git rebase origin/main
   if errorlevel 1 (
     echo [ERROR] GitHub contains changes that conflict with this folder.
@@ -191,9 +209,20 @@ if not errorlevel 1 (
   )
 )
 
+if defined JARVIS_ADOPTED_REMOTE_HISTORY (
+  rem Restore GitHub-only tracked files that were intentionally not deleted.
+  git restore --worktree .
+  if errorlevel 1 goto :failed
+)
+
 echo.
-echo [7/7] Uploading JARVIS to GitHub...
+echo [7/8] Uploading JARVIS to GitHub...
 git push -u origin main
+if errorlevel 1 goto :failed
+
+echo.
+echo [8/8] Starting the Windows EXE/MSI update build...
+gh workflow run "build-windows-installers.yml" --repo "%JARVIS_GITHUB_REPOSITORY%" --ref main
 if errorlevel 1 goto :failed
 
 echo.
@@ -201,11 +230,11 @@ echo ============================================================
 echo SUCCESS: JARVIS was uploaded to:
 echo https://github.com/%JARVIS_GITHUB_REPOSITORY%
 echo.
-echo The GitHub Actions page will open next. Select:
-echo Build JARVIS Windows Installers ^> Run workflow
+echo The v1.10.1 Windows update build was started automatically.
+echo The GitHub Actions page will open so you can watch its progress.
 echo ============================================================
 echo.
-start "" "https://github.com/%JARVIS_GITHUB_REPOSITORY%/actions"
+start "" "https://github.com/%JARVIS_GITHUB_REPOSITORY%/actions/workflows/build-windows-installers.yml"
 pause
 exit /b 0
 

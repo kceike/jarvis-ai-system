@@ -51,7 +51,7 @@ jobs:
             enabled = $true
             version = $version
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
-            notes = "JARVIS $version desktop update. Website, AI, memory, voice, synchronization, and Windows Command Center capabilities remain available."
+            notes = "JARVIS $version automatic-update test release. After installation, JARVIS confirms the installed desktop version. Website, AI, memory, voice, synchronization, and Windows Command Center capabilities remain available."
             installers = [ordered]@{
               exe = [ordered]@{ url = "$base/$($exe.Name)"; sha256 = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
               msi = [ordered]@{ url = "$base/$($msi.Name)"; sha256 = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
