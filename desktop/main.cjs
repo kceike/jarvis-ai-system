@@ -34,6 +34,7 @@ let installedAppsUpdatedAt = 0;
 let updateCheckPromise = null;
 let pendingUpdate = null;
 let updateInstallLaunched = false;
+let updateQuitInProgress = false;
 
 const START_APPS_COMMAND = "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress";
 const INSTALL_TYPE_COMMAND = "$paths=@('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'); Get-ItemProperty $paths -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -eq 'JARVIS AI'} | Select-Object DisplayName,WindowsInstaller,UninstallString | ConvertTo-Json -Compress";
@@ -222,27 +223,28 @@ function powershellLiteral(value) {
 }
 
 function launchDeferredInstaller(update) {
-  if (!update || updateInstallLaunched || process.platform !== "win32") return false;
+  if (!update || updateInstallLaunched || process.platform !== "win32") return Promise.resolve(false);
   const installer = powershellLiteral(update.path);
   const application = powershellLiteral(process.execPath);
   const installerCommand = update.kind === "msi"
     ? `$process=Start-Process -FilePath ${powershellLiteral(windowsPath("msiexec.exe"))} -ArgumentList @('/i',${installer},'/passive','/norestart') -Wait -PassThru`
     : `$process=Start-Process -FilePath ${installer} -ArgumentList @('/S','--updated') -Wait -PassThru`;
-  const script = `$ErrorActionPreference='Stop'; try { Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue; ${installerCommand}; if($process.ExitCode -in @(0,3010)){ Start-Process -FilePath ${application} -ArgumentList @('--updated') } } finally { Remove-Item -LiteralPath ${installer} -Force -ErrorAction SilentlyContinue }`;
+  const script = `$ErrorActionPreference='Stop'; try { Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue; ${installerCommand}; if($process.ExitCode -in @(0,3010)){ Start-Process -FilePath ${application} -ArgumentList @('--updated') } else { Start-Process -FilePath ${application} -ArgumentList @('--update-failed=installer') } } catch { Start-Process -FilePath ${application} -ArgumentList @('--update-failed=launcher') } finally { Remove-Item -LiteralPath ${installer} -Force -ErrorAction SilentlyContinue }`;
   const encoded = Buffer.from(script, "utf16le").toString("base64");
-  try {
+  return new Promise((resolve, reject) => {
     const child = spawn(windowsPath("WindowsPowerShell\\v1.0\\powershell.exe"), ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded], {
       detached: true,
       stdio: "ignore",
       windowsHide: true,
       shell: false,
     });
-    child.unref();
-    updateInstallLaunched = true;
-    return true;
-  } catch {
-    return false;
-  }
+    child.once("error", reject);
+    child.once("spawn", () => {
+      child.unref();
+      updateInstallLaunched = true;
+      resolve(true);
+    });
+  });
 }
 
 async function presentPendingUpdate(manual) {
@@ -638,15 +640,19 @@ function installApplicationMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-function showSuccessfulUpdateConfirmation() {
-  if (!process.argv.includes("--updated")) return;
+function showUpdateResultConfirmation() {
+  const updated = process.argv.includes("--updated");
+  const failed = process.argv.some((argument) => argument.startsWith("--update-failed="));
+  if (!updated && !failed) return;
   const timer = setTimeout(() => {
     if (!currentWindow || currentWindow.isDestroyed()) return;
     dialog.showMessageBox(currentWindow, {
-      type: "info",
-      title: "JARVIS update complete",
-      message: "Update test successful",
-      detail: `JARVIS desktop version ${app.getVersion()} is now installed and running.`,
+      type: updated ? "info" : "error",
+      title: updated ? "JARVIS update complete" : "JARVIS update failed",
+      message: updated ? "Update test successful" : "The automatic installer could not complete.",
+      detail: updated
+        ? `JARVIS desktop version ${app.getVersion()} is now installed and running.`
+        : "JARVIS reopened without changing the installed version. Download the release installer manually or try the update again.",
       buttons: ["Continue"],
       defaultId: 0,
       noLink: true,
@@ -686,7 +692,7 @@ if (!hasSingleInstanceLock) {
     if (websiteUrl) createJarvisWindow(websiteUrl);
     else createSetupWindow();
     scheduleAutomaticUpdateChecks();
-    showSuccessfulUpdateConfirmation();
+    showUpdateResultConfirmation();
   });
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length) return;
@@ -695,7 +701,28 @@ if (!hasSingleInstanceLock) {
     else createSetupWindow();
   });
   app.on("window-all-closed", () => app.quit());
-  app.on("before-quit", () => {
-    if (pendingUpdate) launchDeferredInstaller(pendingUpdate);
+  app.on("before-quit", (event) => {
+    if (!pendingUpdate || updateInstallLaunched) return;
+    event.preventDefault();
+    if (updateQuitInProgress) return;
+    updateQuitInProgress = true;
+    launchDeferredInstaller(pendingUpdate)
+      .then((started) => {
+        if (!started) throw new Error("The Windows installer helper did not start.");
+        app.quit();
+      })
+      .catch(async (error) => {
+        updateQuitInProgress = false;
+        if (!currentWindow || currentWindow.isDestroyed()) return;
+        await dialog.showMessageBox(currentWindow, {
+          type: "error",
+          title: "JARVIS update could not start",
+          message: "JARVIS stayed open because the Windows installer helper could not start.",
+          detail: error instanceof Error ? error.message : "Unknown installer launch error.",
+          buttons: ["Continue"],
+          defaultId: 0,
+          noLink: true,
+        });
+      });
   });
 }

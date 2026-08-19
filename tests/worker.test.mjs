@@ -285,6 +285,10 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(desktopMain, /Automatic desktop updates/);
   assert.match(desktopMain, /launchDeferredInstaller/);
   assert.match(desktopMain, /Update test successful/);
+  assert.match(desktopMain, /event\.preventDefault\(\)/);
+  assert.match(desktopMain, /child\.once\("spawn"/);
+  assert.match(desktopMain, /--update-failed=installer/);
+  assert.match(desktopMain, /JARVIS stayed open because the Windows installer helper could not start/);
   assert.match(updateManager, /compareVersions/);
   assert.match(updateManager, /validateUpdateManifest/);
   assert.match(updateManager, /isTrustedDownloadSource/);

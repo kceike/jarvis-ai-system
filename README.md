@@ -156,6 +156,8 @@ The installed app checks its linked JARVIS website shortly after launch and ever
 
 The v1.10.1 hotfix accounts for Electron's documented limitation that `net.fetch()` may expose an incorrect or empty final response URL. JARVIS still requires the manifest installer address to use HTTPS, rejects any observed non-HTTPS final URL, enforces the 500 MB limit, and verifies the complete installer against its release SHA-256 before installation. Because v1.10.0 contains the earlier client-side check, install the corrected v1.10.1 manually once; automatic updating can then be tested with v1.10.2 and later.
 
+The v1.10.2 installer-handoff hotfix keeps JARVIS open until the detached Windows PowerShell helper confirms that it started. A helper launch failure is shown immediately instead of silently closing the app. If the installer later returns an error, JARVIS relaunches with an update-failed message; a successful installer relaunches it with the installed-version confirmation.
+
 Normal website, interface, prompt, and Cloudflare AI changes do not require an installer update because the EXE/MSI already loads the live website. Publish a new native release only when desktop/Electron code, Windows controls, icons, or installer configuration changes.
 
 ### Install directly from the website
