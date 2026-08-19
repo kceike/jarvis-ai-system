@@ -230,7 +230,7 @@ echo ============================================================
 echo SUCCESS: JARVIS was uploaded to:
 echo https://github.com/%JARVIS_GITHUB_REPOSITORY%
 echo.
-echo The v1.12.3 system-tray repaint fix build was started automatically.
+echo The v1.12.4 Hey JARVIS ON/OFF control fix build was started automatically.
 echo The GitHub Actions page will open so you can watch its progress.
 echo ============================================================
 echo.

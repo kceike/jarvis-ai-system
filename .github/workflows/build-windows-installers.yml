@@ -51,7 +51,7 @@ jobs:
             enabled = $true
             version = $version
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
-            notes = "JARVIS $version fixes the black content surface after a system-tray restore by scheduling full Chromium repaints and restoring web-content focus without reloading, while preserving the optional local Hey JARVIS listener, all previous capabilities, and confirmations."
+            notes = "JARVIS $version fixes the Always listen ON/OFF control so it applies immediately, shows STARTING/ON/OFF, stops the native listener when disabled, and returns to OFF with the actual error if startup fails, while preserving all previous capabilities and confirmations."
             installers = [ordered]@{
               exe = [ordered]@{ url = "$base/$($exe.Name)"; sha256 = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
               msi = [ordered]@{ url = "$base/$($msi.Name)"; sha256 = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }

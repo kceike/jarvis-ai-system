@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.12.3
+JARVIS AI - WINDOWS INSTALLER 1.12.4
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,12 +9,12 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.12.3 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.12.4 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.12.3 keeps every previous JARVIS function, fixes the black screen after
-a system-tray restore, and lets the optional Hey JARVIS listener remain active
-while the Windows app is minimized to its visible system tray.
+Version 1.12.4 keeps every previous JARVIS function and fixes the Always listen
+ON/OFF control. It applies immediately, shows STARTING/ON/OFF, stops immediately
+when disabled, and returns to OFF if the speech listener cannot start.
 It keeps the visible confirmation after an automatic update. Install v1.10.0 or later once, then configure the release channel with
 CONFIGURE_WINDOWS_AUTO_UPDATE.bat. Future verified native releases download in
 the background and install when JARVIS closes.
