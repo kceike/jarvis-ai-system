@@ -287,10 +287,13 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(desktopMain, /Update test successful/);
   assert.match(updateManager, /compareVersions/);
   assert.match(updateManager, /validateUpdateManifest/);
+  assert.match(updateManager, /isTrustedDownloadSource/);
   assert.doesNotMatch(jarvisPreload, /ipcRenderer\.send|ipcRenderer\.on/);
   assert.match(setupPreload, /contextBridge\.exposeInMainWorld/);
   assert.match(buildBatch, /npm run dist/);
   assert.match(configureUpdateBatch, /JARVIS_DESKTOP_MANIFEST_URL/);
+  assert.match(configureUpdateBatch, /npx\.cmd wrangler deploy/);
+  assert.doesNotMatch(configureUpdateBatch, /npm run deploy/);
   assert.match(githubUploadBatch, /kceike\/jarvis-ai-system/);
   assert.match(githubUploadBatch, /gh auth login[\s\S]*--web/);
   assert.match(githubUploadBatch, /gh auth refresh[\s\S]*--scopes workflow/);

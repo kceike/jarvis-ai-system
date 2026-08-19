@@ -9,7 +9,7 @@ const { Readable, Transform } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
 const { pathToFileURL } = require("node:url");
 const { normalizeWebsiteUrl, sameTrustedOrigin } = require("./url-config.cjs");
-const { compareVersions, inferInstallerKind, normalizeHttpsUrl, selectInstaller, validateUpdateManifest } = require("./update-manager.cjs");
+const { compareVersions, inferInstallerKind, isTrustedDownloadSource, normalizeHttpsUrl, selectInstaller, validateUpdateManifest } = require("./update-manager.cjs");
 const {
   SETTING_TARGETS,
   CONTROL_TARGETS,
@@ -177,6 +177,9 @@ async function fetchDesktopUpdateManifest() {
 
 async function downloadVerifiedInstaller(release, installer) {
   const extension = installer.kind === "msi" ? ".msi" : ".exe";
+  if (!isTrustedDownloadSource(installer.url, "", extension)) {
+    throw new Error("The installer address is not a trusted HTTPS download.");
+  }
   const updateDirectory = join(app.getPath("temp"), "JARVIS-AI-Updates");
   mkdirSync(updateDirectory, { recursive: true });
   const destination = join(updateDirectory, `JARVIS-AI-${release.version}-${installer.kind}-${Date.now()}${extension}`);
@@ -185,7 +188,9 @@ async function downloadVerifiedInstaller(release, installer) {
   try {
     const response = await net.fetch(installer.url, { method: "GET", cache: "no-store", signal: controller.signal });
     if (!response.ok || !response.body) throw new Error(`The installer download returned HTTP ${response.status}.`);
-    if (!normalizeHttpsUrl(response.url)) throw new Error("The installer redirected to an untrusted address.");
+    if (!isTrustedDownloadSource(installer.url, response.url, extension)) {
+      throw new Error("The installer redirected to an untrusted address.");
+    }
     const declaredLength = Number(response.headers.get("content-length") || 0);
     if (declaredLength > UPDATE_MAX_BYTES) throw new Error("The installer is larger than the 500 MB safety limit.");
     let received = 0;

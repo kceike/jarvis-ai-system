@@ -150,9 +150,11 @@ Install JARVIS 1.10.0 or later manually once because an older executable cannot 
 
 1. Upload the complete project to a public GitHub repository.
 2. Run `UPLOAD_TO_GITHUB.bat`. It can safely attach a freshly extracted ZIP to the existing repository history, uploads the new version, and starts **Build JARVIS Windows Installers** automatically. The workflow publishes the EXE, MSI, and their SHA-256 update manifest as a GitHub Release.
-3. Double-click `CONFIGURE_WINDOWS_AUTO_UPDATE.bat`, enter the repository as `owner/repository`, and allow it to redeploy the Cloudflare update endpoint.
+3. Double-click `CONFIGURE_WINDOWS_AUTO_UPDATE.bat`, enter the repository as `owner/repository`, and allow it to redeploy the Cloudflare update endpoint through `npx wrangler deploy` without requiring a prior local `npm install`.
 
 The installed app checks its linked JARVIS website shortly after launch and every six hours. When the website reports a higher stable desktop version, JARVIS chooses the matching EXE or MSI, downloads it over HTTPS, verifies its SHA-256, and installs it automatically when you close the app. Select **Alt → JARVIS → Check for desktop update** for an immediate check or clear **Automatic desktop updates** to disable background checks.
+
+The v1.10.1 hotfix accounts for Electron's documented limitation that `net.fetch()` may expose an incorrect or empty final response URL. JARVIS still requires the manifest installer address to use HTTPS, rejects any observed non-HTTPS final URL, enforces the 500 MB limit, and verifies the complete installer against its release SHA-256 before installation. Because v1.10.0 contains the earlier client-side check, install the corrected v1.10.1 manually once; automatic updating can then be tested with v1.10.2 and later.
 
 Normal website, interface, prompt, and Cloudflare AI changes do not require an installer update because the EXE/MSI already loads the live website. Publish a new native release only when desktop/Electron code, Windows controls, icons, or installer configuration changes.
 

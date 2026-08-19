@@ -36,9 +36,9 @@ if not defined JARVIS_DESKTOP_MANIFEST_URL (
 
 echo.
 echo Checking your Cloudflare login...
-call npx wrangler whoami >nul 2>&1
+call npx.cmd wrangler whoami >nul 2>&1
 if errorlevel 1 (
-  call npx wrangler login
+  call npx.cmd wrangler login
   if errorlevel 1 goto :failed
 )
 
@@ -47,7 +47,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:JARVIS_DESKTOP_MANI
 if errorlevel 1 goto :failed
 
 echo Deploying the update endpoint to your linked JARVIS website...
-call npm run deploy
+call npx.cmd wrangler deploy
 if errorlevel 1 goto :failed
 
 echo.

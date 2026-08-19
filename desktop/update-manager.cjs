@@ -42,6 +42,15 @@ function normalizeInstaller(rawInstaller, kind) {
   return Object.freeze({ kind, url, sha256 });
 }
 
+function isTrustedDownloadSource(requestedUrl, responseUrl, extension) {
+  if (!normalizeHttpsUrl(requestedUrl, extension)) return false;
+  const observed = String(responseUrl || "").trim();
+  // Electron documents that net.fetch() can report an incorrect or empty
+  // Response.url. When it is empty, the already validated HTTPS request URL
+  // and the mandatory SHA-256 verification remain the security boundary.
+  return !observed || Boolean(normalizeHttpsUrl(observed));
+}
+
 function validateUpdateManifest(raw) {
   if (!raw || typeof raw !== "object" || raw.schema !== UPDATE_SCHEMA) {
     throw new Error("The JARVIS desktop update manifest is not supported.");
@@ -81,6 +90,7 @@ module.exports = {
   UPDATE_SCHEMA,
   compareVersions,
   inferInstallerKind,
+  isTrustedDownloadSource,
   normalizeHttpsUrl,
   parseStableVersion,
   selectInstaller,

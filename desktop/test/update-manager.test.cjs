@@ -5,6 +5,7 @@ const test = require("node:test");
 const {
   compareVersions,
   inferInstallerKind,
+  isTrustedDownloadSource,
   normalizeHttpsUrl,
   selectInstaller,
   validateUpdateManifest,
@@ -25,6 +26,14 @@ test("accepts only HTTPS installer URLs without embedded credentials", () => {
   assert.equal(normalizeHttpsUrl("http://downloads.example/JARVIS.exe", ".exe"), null);
   assert.equal(normalizeHttpsUrl("https://user:pass@downloads.example/JARVIS.exe", ".exe"), null);
   assert.equal(normalizeHttpsUrl("https://downloads.example/JARVIS.zip", ".exe"), null);
+});
+
+test("handles Electron's empty response URL without weakening download checks", () => {
+  const requested = "https://github.com/example/jarvis/releases/download/v1/JARVIS.exe";
+  assert.equal(isTrustedDownloadSource(requested, "", ".exe"), true);
+  assert.equal(isTrustedDownloadSource(requested, "https://release-assets.githubusercontent.com/file", ".exe"), true);
+  assert.equal(isTrustedDownloadSource(requested, "http://downloads.example/file", ".exe"), false);
+  assert.equal(isTrustedDownloadSource("http://downloads.example/JARVIS.exe", "", ".exe"), false);
 });
 
 test("validates the release manifest and preserves both installer formats", () => {
