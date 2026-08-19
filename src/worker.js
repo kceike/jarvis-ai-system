@@ -352,7 +352,7 @@ const LOGIN_HTML = String.raw`<!doctype html>
       <button class="submit" id="submit" type="submit">ESTABLISH SECURE LINK</button>
       <div class="status" id="status" role="status" aria-live="polite">AWAITING CREDENTIALS</div>
     </form>
-    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.10.2</div>
+    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.10.3</div>
   </main>
   <script>
     (function(){
@@ -1012,7 +1012,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "Configure JARVIS_DESKTOP_MANIFEST_URL after publishing the first Windows release.",
-      websiteBuild: "1.10.2",
+      websiteBuild: "1.10.3",
     }, 200, isHead);
   }
   try {
@@ -1035,7 +1035,7 @@ async function desktopUpdate(request, env) {
       version,
       publishedAt: typeof release.publishedAt === "string" ? release.publishedAt.slice(0, 64) : "",
       notes: typeof release.notes === "string" ? release.notes.slice(0, 4_000) : "",
-      websiteBuild: "1.10.2",
+      websiteBuild: "1.10.3",
       installers: { exe, msi },
     }, 200, isHead);
   } catch (error) {
@@ -1043,7 +1043,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "The configured Windows release channel is temporarily unavailable.",
-      websiteBuild: "1.10.2",
+      websiteBuild: "1.10.3",
       error: error instanceof Error ? error.message.slice(0, 240) : "Update service error.",
     }, 502, isHead);
   }
@@ -1055,7 +1055,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/login") return login(request, env);
     if (request.method === "POST" && url.pathname === "/api/logout") return logout();
     if (url.pathname === "/api/health") {
-      return json({ service: "JARVIS", status: "online", build: "1.10.2", ai: Boolean(env.AI) });
+      return json({ service: "JARVIS", status: "online", build: "1.10.3", ai: Boolean(env.AI) });
     }
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/api/desktop-update") return desktopUpdate(request, env);
     const authorized = await isAuthorized(request, env);
