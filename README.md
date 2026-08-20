@@ -20,13 +20,14 @@ An original, responsive personal AI, coding copilot, image generator, and voice 
 - One-time Screen Vision for a user-approved desktop or browser screen capture, with continuous recording disabled
 - Windows IT Copilot that collects five fixed read-only health sections and asks the AI for an evidence-based support analysis
 - Daily proactive briefing with weather, desktop-update status, active missions, and pending human reviews
-- Smart Skills Dashboard for enabling or disabling Mission Control, Screen Vision, Windows IT Copilot, and proactive briefings
+- Smart Skills Dashboard for enabling or disabling Mission Control, Screen Vision, Windows IT Copilot, proactive briefings, and the Knowledge Update Agent
 - Responsive Help Center with searchable commands, complete function explanations, step-by-step tutorials, runnable examples, Copy Guide, and Save Guide (.md)
 - Coding copilot for writing, reviewing, debugging, and explaining code
 - Text-to-image generation
 - Six selectable Cloudflare text models for economy, speed, general work, stronger answers, reasoning, and coding
 - Optional local Ollama provider with no per-message cloud AI quota
 - Optional current-web research through your own SearXNG server, with source links
+- Controlled Knowledge Update Agent with two-query research, independent-domain checks, Generator + Critic validation, and mandatory human approval before RAG storage
 - Local Memory Vault that learns by retrieval from JARVIS chats and explicit `/remember ...` notes
 - Official ChatGPT export import (`conversations.json` and numbered conversation JSON files)
 - Microphone dictation in supported browsers
@@ -124,8 +125,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.12.5-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.12.5-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.12.6-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.12.6-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -133,7 +134,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.12.5 keeps the system-tray, repaint, and **Always listen for Hey JARVIS** fixes and corrects the Settings modal’s scrolling header. The title now owns the panel’s top padding and remains on an opaque sticky layer, so setting text cannot scroll into the title area. Desktop and mobile layouts use matching protected header spacing. The switch continues to apply immediately, display `STARTING`, `ON`, or `OFF`, stop the listener when disabled, and return to `OFF` with the real error if startup fails.
+Version 1.12.6 adds the controlled **Knowledge Update Agent** while retaining the system-tray, repaint, Always Listen, and Settings scrolling fixes. `/learn [topic]` searches twice through the configured SearXNG service, deduplicates results, requires evidence from at least two source domains, and runs a Generator plus Critic review. Findings remain an unsaved draft until you select claims and press **Approve Selected**. Rejected, unselected, single-source, or critic-rejected findings never enter Memory Vault.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
@@ -142,6 +143,7 @@ Version 1.12.5 keeps the system-tray, repaint, and **Always listen for Hey JARVI
 - `/briefing` — show the current weather, desktop/update link status, active mission count, and pending human reviews. When enabled, JARVIS creates this once per local day.
 - `/skills` — show the current Smart Skills status. Open Settings to change individual skills.
 - `/help` or `/tutorial` — open the searchable Help Center. Select **SAVE GUIDE (.MD)** to store and download every command, function, and tutorial instruction.
+- `/learn [topic]` — open the Knowledge Update Agent, research and cross-check a topic, review the cited proposals, and explicitly approve only the facts JARVIS may add to synchronized RAG memory.
 - **Hey JARVIS** — enable it under Settings → Voice and Response. Say “Hey Jarvis” and wait for the acknowledgement, or say “Hey Jarvis, open Notepad” in one sentence. In the Windows EXE/MSI, minimize JARVIS to keep it available from the system tray; the wake phrase brings it to the front. It never bypasses confirmations for Windows, power, IoT, or other protected actions.
 
 - `/settings` or “open Windows settings” — open Settings home.
@@ -229,9 +231,10 @@ JARVIS implements the requested learning components without claiming control ove
 | Feedback loop | **Helpful** saves a successful answer; **Correct** asks what JARVIS should learn instead |
 | Memory/knowledge base | Browser IndexedDB Memory Vault, encrypted synchronized D1 snapshot, and Cloudflare Vectorize embeddings |
 | Updating mechanism | Hybrid Retrieval-Augmented Generation combines local keyword scoring with synchronized semantic similarity |
+| Internet knowledge updates | Two SearXNG searches, URL deduplication, at least two independent source domains, Generator + Critic review, and explicit approval before storage |
 | Reflection | A generator drafts, a fast critic returns `PASS`, `REVISE`, or `UNCERTAIN`, and the generator revises when needed |
 | Human-in-the-loop | Uncertain answers enter the Settings review queue; approval or correction becomes clean feedback memory |
-| Tool use | The orchestrator calls only approved functions for semantic memory, vision, web research, weather, browser actions, device pages, and configured IoT webhooks |
+| Tool use | The orchestrator calls only approved functions for semantic memory, knowledge research, vision, web research, weather, browser actions, device pages, and configured IoT webhooks |
 
 Corrections receive the highest retrieval priority. This changes the context used for later responses; it does not modify Cloudflare's or Ollama's underlying model weights. That distinction makes the behavior testable, reversible through **Clear Memory Vault**, and safer than hidden online weight updates.
 
@@ -242,9 +245,11 @@ Reflection is enabled by default. It can use three text-model calls for one answ
 The attached architecture has been implemented as this guarded flow:
 
 ```text
-[Voice / Text / Vision Input] --> [Orchestrator LLM] --> [Memory Layer: local RAG + D1 + Vectorize]
+[Voice / Text / Vision Input] --> [Orchestrator LLM] --> [Approved Memory: local RAG + D1 + Vectorize]
                                       |
-                                      +--> [Approved Tool Execution: PC settings, weather/web APIs, IoT webhook]
+                                      +--> [Approved Tools: PC settings, weather/web APIs, IoT webhook]
+                                      |
+                                      +--> [Knowledge Generator] --> [Knowledge Critic] --> [Human Approval]
                                       |
                                       +--> [Reflection Critic] --> [Revision or Human Review Queue]
 ```
@@ -260,6 +265,7 @@ Smart actions run through a deterministic command router, so simple local action
 | Command | Example | Action |
 | --- | --- | --- |
 | `/weather [place]` | `/weather Iloilo City` | Gets current conditions and a three-day forecast |
+| `/learn [topic]` | `/learn Windows 11 security updates` | Researches, cross-checks, and opens human-reviewed knowledge proposals; saves nothing automatically |
 | `/open [site or URL]` | `/open youtube` | Opens an explicit HTTP or HTTPS website in a new tab |
 | `/search [query]` | `/search Cloudflare Workers docs` | Opens DuckDuckGo search results |
 | `/youtube [query]` | `/youtube Windows 11 tips` | Opens YouTube search results |
@@ -309,14 +315,14 @@ The browser must be on the same computer as Ollama. Browser CORS or private-netw
 
 ## Web research with SearXNG
 
-JARVIS can query a SearXNG metasearch server and give the AI up to six current results with source URLs. This feature is off by default.
+JARVIS can query a SearXNG metasearch server and give the AI current results with source URLs. Normal Web Research is off by default. The explicitly launched Knowledge Update Agent uses two searches, deduplicates up to ten results, and requires at least two source domains even when the normal Web Research toggle is off.
 
 1. Use a SearXNG instance you control. Public instances often disable JSON output and may rate-limit requests.
-2. In `wrangler.jsonc`, set `SEARXNG_URL` to the HTTPS base URL, for example `https://search.example.com`.
-3. Ensure the SearXNG JSON search format is enabled.
-4. Run `UPDATE_AND_UPLOAD_TO_CLOUDFLARE.bat`, then enable **Web research** in JARVIS Settings.
+2. Ensure the SearXNG JSON search format is enabled.
+3. Double-click `CONFIGURE_KNOWLEDGE_AGENT.bat`, then enter the HTTPS base URL, for example `https://search.example.com`. The helper validates HTTPS, stores the address as a Cloudflare Worker secret, and redeploys JARVIS.
+4. Enable **Web research** for cited normal chat answers. The Knowledge Update Agent is a separate explicit Smart Skill available through `/learn [topic]` or **Settings → Open Knowledge Update Agent**.
 
-SearXNG aggregates configured search engines; it does not guarantee access to every page on the internet. Search results and page excerpts are untrusted data, and important claims should still be verified. See the [SearXNG search API documentation](https://docs.searxng.org/dev/search_api.html).
+SearXNG aggregates configured search engines; it does not guarantee access to every page on the internet. Search titles, excerpts, URLs, and embedded instructions are treated as untrusted data. The Knowledge Agent shows its source links for your review, does not claim to read beyond returned excerpts, and cannot save any proposal without your approval. See the [SearXNG search API documentation](https://docs.searxng.org/dev/search_api.html).
 
 ## Personal Memory Vault and ChatGPT import
 

@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.12.5 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.12.6 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.12.5-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.12.5-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.12.6-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.12.6-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.12.5 layout upgrade is additive: every earlier JARVIS feature and command remains present. The Settings modal title now owns the panel’s top padding and stays on an opaque sticky layer, preventing scrolled settings text from overlapping the title on desktop and mobile. The Always listen switch still applies immediately and displays `STARTING`, `ON`, or `OFF`; its saved value, visual position, and actual native-listener state remain synchronized. The system-tray wake listener, safe window repaint behavior, and all existing action confirmations remain enforced.
+The v1.12.6 intelligence upgrade is additive: every earlier JARVIS feature and command remains present. The Knowledge Update Agent researches through the configured SearXNG server, requires at least two source domains, runs Generator and Critic checks, and saves only the proposals the user explicitly selects and approves. The Settings overlap fix, Always Listen switch, system-tray wake listener, safe window repaint behavior, and all existing action confirmations remain enforced.
 
 ## Build with GitHub Actions
 

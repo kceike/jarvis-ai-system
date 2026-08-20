@@ -23,7 +23,6 @@
     }
   ],
   "vars": {
-    "SEARXNG_URL": "",
     "IOT_WEBHOOK_URL": "",
     "JARVIS_USERNAME": "Kristian"
   },
