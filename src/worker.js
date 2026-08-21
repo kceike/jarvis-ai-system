@@ -99,12 +99,16 @@ const HTML = String.raw`<!doctype html>
     <section class="settings" role="dialog" aria-modal="true" aria-label="JARVIS settings">
       <div class="settings-head"><div><small>SYSTEM CONFIGURATION</small><h2>JARVIS SETTINGS</h2></div><button id="closeSettings" aria-label="Close settings">×</button></div>
       <div class="settings-section">AI CORE</div>
-      <label class="setting"><span class="setting-copy"><strong>Intelligence provider</strong><small>Cloudflare edge, Google Gemini API, or your own local Ollama.</small></span><select id="provider"><option value="cloudflare">Cloudflare AI</option><option value="gemini">Google Gemini API — optional quota</option><option value="ollama">Local Ollama — no cloud quota</option></select></label>
-      <label class="setting"><span class="setting-copy"><strong>Cloudflare model</strong><small>Auto Director routes each request; fixed models remain available.</small></span><select id="cloudModel"><option value="auto">Auto Director — task routing</option><option value="eco">Llama 3.2 1B — Eco</option><option value="fast">Llama 3.2 3B — Fast</option><option value="balanced">Llama 3.1 8B — Balanced</option><option value="max">Llama 3.3 70B — Strong</option><option value="reasoning">DeepSeek R1 32B — Reasoning</option><option value="code">Qwen 3 30B — Coding</option></select></label>
+      <label class="setting"><span class="setting-copy"><strong>JARVIS brain</strong><small>Unified mode chooses the best configured AI and falls back safely.</small></span><select id="provider"><option value="auto">Unified JARVIS Brain — automatic</option><option value="cloudflare">Cloudflare AI only</option><option value="gemini">Google Gemini API only</option><option value="ollama">Local Ollama only</option></select></label>
+      <div class="memory-actions"><button id="maxBrain" type="button">ACTIVATE MAXIMUM UNIFIED BRAIN</button><small>One click selects unified routing, maximum reasoning, 120K context, self-correction, and automatic voice replies.</small></div>
+      <details style="border-bottom:1px solid var(--line);padding:12px 0"><summary style="color:var(--cyan2);cursor:pointer;font:600 8px/1.4 Consolas,monospace;letter-spacing:.12em">ADVANCED AI OVERRIDES</summary>
+      <div class="memory-actions"><button id="testGemini" type="button">TEST GEMINI CONNECTION</button><small id="geminiStatus">Tests the configured Gemini secret without displaying or storing the API key.</small></div>
+      <label class="setting"><span class="setting-copy"><strong>Model routing</strong><small>Natural chat/code/image routing works with every provider. Fixed entries below select a Cloudflare text model only.</small></span><select id="cloudModel"><option value="auto">Auto Director — task routing</option><option value="eco">Llama 3.2 1B — Eco</option><option value="fast">Llama 3.2 3B — Fast</option><option value="balanced">Llama 3.1 8B — Balanced</option><option value="max">Llama 3.3 70B — Strong</option><option value="reasoning">DeepSeek R1 32B — Reasoning</option><option value="code">Qwen 3 30B — Coding</option></select></label>
       <label class="setting"><span class="setting-copy"><strong>Reasoning power</strong><small>Maximum uses larger context, a stronger task model, Critic review, and revision. It consumes more AI or local compute.</small></span><select id="reasoningPower"><option value="standard">Standard</option><option value="deep">Deep</option><option value="max">Maximum</option></select></label>
       <label class="setting"><span class="setting-copy"><strong>Context window</strong><small>Maximum attachment and conversation context sent to compatible models.</small></span><select id="contextWindow"><option value="32000">32K — efficient</option><option value="64000">64K — extended</option><option value="120000">120K — maximum</option></select></label>
       <label class="setting"><span class="setting-copy"><strong>Ollama endpoint</strong><small>Runs on your computer; configure browser access first.</small></span><input id="ollamaUrl" type="url" value="http://localhost:11434/v1" spellcheck="false"></label>
       <label class="setting"><span class="setting-copy"><strong>Ollama model</strong><small>Install the model locally before selecting it.</small></span><input id="ollamaModel" type="text" value="qwen3:4b" spellcheck="false"></label>
+      </details>
       <label class="setting toggle"><span class="setting-copy"><strong>Web research</strong><small>Uses your configured SearXNG server and adds cited results.</small></span><input id="webSearch" type="checkbox"><i></i></label>
       <div class="settings-section">MEMORY VAULT</div>
       <label class="setting toggle"><span class="setting-copy"><strong>Learn from my conversations</strong><small>Stores searchable memories locally on this device.</small></span><input id="memoryEnabled" type="checkbox" checked><i></i></label>
@@ -173,7 +177,7 @@ const HTML = String.raw`<!doctype html>
       var details={chat:{name:"JARVIS",icon:"◉",placeholder:"Ask JARVIS anything…"},code:{name:"COPILOT",icon:"⌘",placeholder:"Describe code to write, debug, or explain…"},image:{name:"VISION",icon:"◇",placeholder:"Describe the image to generate…"}};
       var modelLabels={auto:"AUTO DIRECTOR",eco:"Llama 3.2 · 1B",fast:"Llama 3.2 · 3B",balanced:"Llama 3.1 · 8B",max:"Llama 3.3 · 70B",reasoning:"DeepSeek R1 · 32B",code:"Qwen 3 · 30B"};
       var prompts={chat:[{tag:"BRIEFING",title:"Daily operational briefing",prompt:"/briefing"},{tag:"MISSION",title:"Plan a multi-step goal",prompt:"/mission Prepare my workday and check this PC"},{tag:"SCREEN",title:"Explain what is on my screen",prompt:"/screen Explain the visible screen and identify any error"},{tag:"IT COPILOT",title:"Run a Windows health analysis",prompt:"/itcheck"}],code:[{tag:"BUILD",title:"Write a PowerShell tool",prompt:"Create a safe PowerShell script that checks Windows system health and exports a readable report."},{tag:"DEBUG",title:"Debug my code",prompt:"Review this code, identify the root cause, and provide a corrected version: [paste code here]"},{tag:"REVIEW",title:"Explain a codebase",prompt:"Explain this code step by step, then list risks and possible improvements: [paste code here]"},{tag:"DESIGN",title:"Build a responsive UI",prompt:"Create an accessible responsive web component and explain how to integrate it."}],image:[{tag:"SCENE",title:"Futuristic command center",prompt:"A cinematic futuristic AI command center, cyan holographic interfaces, dark titanium surfaces, dramatic volumetric light, no text"},{tag:"UI ART",title:"Arc reactor interface",prompt:"A clean circular energy reactor interface, cyan and amber glow, technical rings, black background, premium sci-fi UI asset, no text"},{tag:"AVATAR",title:"Professional AI avatar",prompt:"A sophisticated original AI assistant avatar, dark metallic armor, subtle cyan lights, friendly and intelligent, studio portrait"},{tag:"CONCEPT",title:"Product concept",prompt:"A premium near-future wearable technology product concept, photorealistic studio lighting, black and silver materials"}]};
-      var state={conversations:[],active:"",attachments:[],knowledgeDraft:null,sending:false,listening:false,speaking:false,syncing:false,syncApplying:false,syncTimer:null,syncUnavailable:false,syncMeta:{deviceId:"",revision:0,settingsUpdatedAt:0,memoryClearedAt:0,tombstones:{}},settings:{provider:"cloudflare",cloudModel:"auto",reasoningPower:"deep",contextWindow:64000,ollamaUrl:"http://localhost:11434/v1",ollamaModel:"qwen3:4b",webSearch:false,memoryEnabled:true,cloudSync:true,reflectionMode:true,missionControlEnabled:true,screenVisionEnabled:true,itCopilotEnabled:true,proactiveBriefingEnabled:true,knowledgeAgentEnabled:true,autoSpeak:true,neuralVoice:false,wakeWordEnabled:false,concise:false,creativity:.55,title:"sir",weatherLocation:"Iloilo City, Philippines"}};
+      var state={conversations:[],active:"",attachments:[],knowledgeDraft:null,sending:false,aiStage:"",listening:false,speaking:false,syncing:false,syncApplying:false,syncTimer:null,syncUnavailable:false,syncMeta:{deviceId:"",revision:0,settingsUpdatedAt:0,memoryClearedAt:0,tombstones:{}},settings:{provider:"auto",cloudModel:"auto",reasoningPower:"max",contextWindow:120000,ollamaUrl:"http://localhost:11434/v1",ollamaModel:"qwen3:4b",webSearch:false,memoryEnabled:true,cloudSync:true,reflectionMode:true,missionControlEnabled:true,screenVisionEnabled:true,itCopilotEnabled:true,proactiveBriefingEnabled:true,knowledgeAgentEnabled:true,autoSpeak:true,neuralVoice:false,wakeWordEnabled:false,concise:false,creativity:.55,title:"sir",weatherLocation:"Iloilo City, Philippines"}};
       var HELP_SECTIONS=[
         {title:"GETTING STARTED TUTORIALS",items:[
           {name:"First conversation",description:"1. Select JARVIS for general assistance or COPILOT for coding.\n2. Type a request in the composer.\n3. Press Enter or SEND. Use Shift+Enter for a new line.\n4. Rate a useful answer or correct it so Memory Vault can personalize later."},
@@ -226,13 +230,13 @@ const HTML = String.raw`<!doctype html>
         ]},
         {title:"ADVANCED INTELLIGENCE AND MULTIMODAL COMMANDS",items:[
           {name:"Natural Language Intent Director",description:"Speak or type normal requests without slash commands. JARVIS identifies the intended skill, extracts its target, and routes it through the same protected command handler. Slash commands remain optional diagnostic shortcuts. Ambiguous or sensitive actions are never silently executed."},
-          {name:"Auto Director",description:"Select Auto Director in Settings to classify each input as conversation, coding, image creation, research, file learning, screen vision, or a protected tool action. It automatically selects the matching mode and the configured Cloudflare, Gemini, or Ollama route. Fixed models and manual modes remain selectable."},
-          {name:"Google Gemini API — maximum profile",description:"Run CONFIGURE_GEMINI_API.bat once, keep the API key only in a Cloudflare Worker secret, then select Google Gemini API in Settings. JARVIS enables the configured Gemini model for chat, coding, image/screen analysis, long-context file work, Deep Research, Knowledge Update Generator/Critic, and Generator → Critic → Revision. Maximum reasoning allows up to 8K output tokens and the JARVIS 120K context setting. Gemini free quota is limited and Google controls model availability and data terms."},
+          {name:"Unified JARVIS Brain",description:"Select Unified JARVIS Brain or press ACTIVATE MAXIMUM UNIFIED BRAIN. Natural requests are classified as chat, code, image, research, file learning, screen vision, or protected tools. JARVIS prefers a configured Gemini route, safely falls back to Cloudflare AI after a Gemini failure, and in the genuine Windows app can try the configured local Ollama model if both cloud routes fail. Manual provider overrides remain under Advanced AI Overrides."},
+          {name:"Google Gemini API — maximum profile",description:"Run CONFIGURE_GEMINI_API.bat once and keep the API key only in a Cloudflare Worker secret. Unified Brain can then use Gemini for chat, coding, image/screen analysis, long-context file work, Deep Research, Knowledge Update Generator/Critic, and Generator → Critic → Revision. Use Advanced AI Overrides → TEST GEMINI CONNECTION to see the deployed model and latency without exposing the key. Maximum reasoning allows up to 8K output tokens and the JARVIS 120K context setting. Gemini free quota is limited and Google controls model availability and data terms."},
           {name:"Maximum reasoning",description:"Settings → Reasoning power → Maximum enables a stronger task route, larger response budget, reasoning Critic, and final revision. It improves difficult work but uses more Cloudflare/Gemini allowance or local compute."},
           {name:"Extended context",description:"Choose 32K, 64K, or 120K in Settings. JARVIS safely truncates each input to the configured maximum and still treats attached content as untrusted reference material."},
           {name:"/deepresearch [question]",description:"Run four SearXNG searches, deduplicate up to eighteen sources, compare evidence, identify disagreement, and create a cited synthesis with a strong model. Deep Research does not automatically update Memory Vault.",example:"/deepresearch Compare current Windows 11 security baselines"},
           {name:"Audio transcription",description:"Attach MP3, WAV, WebM, MP4, or M4A audio up to 12 MB. Cloudflare Whisper creates a transcript and JARVIS analyzes it together with your request."},
-          {name:"Cloud neural voice",description:"Enable Cloud neural voice in Settings for generated English speech. Voice synthesis and transcription continue to use their existing Cloudflare routes even when Gemini is selected for reasoning. If neural voice is unavailable, JARVIS safely falls back to the installed Windows or browser voice."},
+          {name:"Chat plus voice replies",description:"Enable Automatic voice response to keep every answer visible in chat and speak it aloud. Cloud neural voice uses generated English speech when available; JARVIS safely falls back to the installed Windows or browser voice. Disable Automatic voice response whenever you want text-only operation."},
           {name:"/filesearch [name or text]",description:"In the genuine EXE/MSI, select a folder in the native picker. JARVIS searches readable text/code files and filenames within fixed size and file-count limits. It cannot silently search the entire computer.",example:"/filesearch incident report"},
           {name:"/learnfiles",description:"Extract the currently attached files, ask for confirmation, then save approved chunks to Memory Vault for later RAG retrieval. Source code and data are treated as untrusted text and never executed.",example:"Attach SQL, PHP, Java, HTML, CSV, JSON, or documents, then type /learnfiles"},
           {name:"Broad file analysis",description:"JARVIS accepts any file selection. Text, source code, configuration, SQL dumps, and structured data are read directly; supported binary documents use safe conversion. Encrypted, proprietary, executable, or unsupported binary content may require export to TXT, SQL, CSV, JSON, PDF, or a supported office format."},
@@ -342,7 +346,7 @@ const HTML = String.raw`<!doctype html>
       async function createMissionPlan(goal,displayPrompt){goal=String(goal||"").trim();if(!goal){toast("Describe the mission goal first.");return}if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in the Skills Dashboard.");return}var c=current(),prompt=displayPrompt||"Create a mission plan: "+goal,now=Date.now();closeMissionControl();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:prompt,createdAt:now});if(c.messages.length===1)c.title=goal.replace(/\s+/g," ").slice(0,48);c.updatedAt=now;state.sending=true;save();render();try{var data=await postJson("/api/mission-plan",{goal:goal,userTitle:state.settings.title,memory:await memorySearch(goal)}),mission=cleanMission(data.mission);if(!mission||!mission.steps.length)throw new Error("Mission Control returned no usable steps.");c.messages.push({id:id("msg"),role:"assistant",content:"**MISSION PLAN READY**\n"+(mission.summary||"Review each step below. JARVIS will not execute a computer action without your approval."),mission:mission,createdAt:Date.now()});c.updatedAt=Date.now();if(state.settings.autoSpeak)speak("Mission plan ready, "+(state.settings.title||"sir")+". Review the steps before execution.")}catch(error){c.messages.push({id:id("msg"),role:"assistant",content:"Mission Control could not create the plan. "+error.message,createdAt:Date.now()})}finally{state.sending=false;save();render()}}
       function openMissionControl(){if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in Settings.");return}q("#missionModal").classList.add("open");renderMissionDashboard();requestAnimationFrame(function(){q("#missionGoal").focus()})}
       function closeMissionControl(){q("#missionModal").classList.remove("open")}
-      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.13.5","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
+      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.13.6","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
       function renderHelpCenter(search){var term=String(search||"").trim().toLowerCase(),sections=HELP_SECTIONS.map(function(section){var items=section.items.filter(function(item){return!term||(section.title+" "+item.name+" "+item.description+" "+(item.example||"")).toLowerCase().includes(term)});return{title:section.title,items:items}}).filter(function(section){return section.items.length});q("#helpContent").innerHTML=sections.length?sections.map(function(section){return'<section class="help-section"><h3>'+esc(section.title)+'</h3><div class="help-items">'+section.items.map(function(item){return'<article class="help-item"><h4>'+esc(item.name)+'</h4><p>'+esc(item.description)+'</p>'+(item.example?'<code>'+esc(item.example)+'</code><button class="help-run" data-help-command="'+esc(item.example)+'">LOAD EXAMPLE</button>':"")+'</article>'}).join("")+'</div></section>'}).join(""):'<div class="help-empty">No command, function, or tutorial matched that search.</div>';qa("[data-help-command]").forEach(function(button){button.onclick=function(){q("#input").value=button.dataset.helpCommand;inputChanged();closeHelpCenter();q("#input").focus();toast("Example loaded. Review it, then press Send when ready.")}})}
       function openHelpCenter(){closeMissionControl();closeSettings();q("#helpSearch").value="";renderHelpCenter("");q("#helpScroll").scrollTop=0;q("#helpModal").classList.add("open");requestAnimationFrame(function(){q("#helpSearch").focus()})}
       function closeHelpCenter(){q("#helpModal").classList.remove("open")}
@@ -354,7 +358,7 @@ const HTML = String.raw`<!doctype html>
       async function approveKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft||!Array.isArray(draft.proposals))return;var selected=Array.from(qa(".knowledge-choice:checked")).map(function(input){return Number(input.dataset.index)}).filter(function(index){return Number.isInteger(index)&&draft.proposals[index]});if(!selected.length){toast("Select at least one verified proposal to approve.");return}var now=Date.now(),approved=selected.map(function(index){var proposal=draft.proposals[index],sources=Array.isArray(proposal.sources)?proposal.sources:[],sourceLines=sources.map(function(source){return"- "+String(source.title||"Source").slice(0,300)+" — "+String(source.url||"").slice(0,2000)}).join("\n");return{id:id("memory"),text:("User-approved web knowledge.\nTopic: "+draft.topic+"\nFact: "+proposal.fact+"\nConfidence: "+String(proposal.confidence||"medium").toUpperCase()+"\nVerification: "+(proposal.reason||"Passed generator and critic review.")+"\nApproved: "+new Date(now).toISOString()+"\nSources:\n"+sourceLines).slice(0,8000),source:"knowledge",role:"assistant",title:("Knowledge: "+draft.topic).slice(0,200),createdAt:now+index}});q("#approveKnowledge").disabled=true;try{await memoryPutMany(approved);await updateMemoryCount();appendKnowledgeResult(draft,"**KNOWLEDGE UPDATE APPROVED**\n"+approved.length+" verified fact"+(approved.length===1?" was":"s were")+" added to the synchronized Memory Vault. Unselected proposals were discarded.");state.knowledgeDraft=null;closeKnowledgeAgent();toast(approved.length+" approved knowledge entr"+(approved.length===1?"y":"ies")+" saved and queued for synchronization.")}catch(error){q("#approveKnowledge").disabled=false;toast("Knowledge approval failed: "+error.message)}}
       function rejectKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft)return;appendKnowledgeResult(draft,"**KNOWLEDGE DRAFT REJECTED**\nNo internet finding from this draft was saved to the Memory Vault.");state.knowledgeDraft=null;closeKnowledgeAgent();toast("Knowledge draft rejected. Nothing was learned.")}
       async function copyHelpGuide(){var guide=helpGuideMarkdown();try{await navigator.clipboard.writeText(guide);toast("Complete JARVIS guide copied.")}catch(error){toast("Copy was blocked. Use Save Guide instead.")}}
-      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.13.5.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
+      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.13.6.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
       function chatDistance(){var stream=q("#stream");return stream?Math.max(0,stream.scrollHeight-stream.scrollTop-stream.clientHeight):0}
       function updateJumpButton(newResponse){var button=q("#jumpLatest");if(!button)return;button.textContent=newResponse?"↓ NEW JARVIS RESPONSE":"↓ LATEST RESPONSE";button.classList.toggle("show",!chatStickToBottom&&chatDistance()>90)}
       function scrollChat(behavior){var stream=q("#stream");if(!stream||stream.hidden)return;chatStickToBottom=true;chatAutoScrolling=true;updateJumpButton(false);requestAnimationFrame(function(){stream.scrollTo({top:stream.scrollHeight,left:0,behavior:behavior||"auto"});setTimeout(function(){if(chatAutoScrolling){stream.scrollTop=stream.scrollHeight;chatStickToBottom=true;chatAutoScrolling=false;updateJumpButton(false)}},behavior==="smooth"?420:80)})}
@@ -363,7 +367,7 @@ const HTML = String.raw`<!doctype html>
       function updateReviewCount(){var count=0;state.conversations.forEach(function(c){c.messages.forEach(function(m){if(m.role==="assistant"&&m.reviewNeeded&&!m.reviewed)count++})});var label=q("#reviewCount");if(label)label.textContent=count?count+" uncertain answer"+(count===1?" is":"s are")+" waiting for your approval or correction.":"No answers are waiting for human review.";return count}
       async function feedbackMessage(messageId,type,suppliedCorrection){var c=current(),index=c.messages.findIndex(function(message){return message.id===messageId}),message=c.messages[index];if(!message||message.role!=="assistant")return;var request="";for(var i=index-1;i>=0;i--){if(c.messages[i].role==="user"){request=c.messages[i].content;break}}var correction="",entry;if(type==="corrected"){correction=typeof suppliedCorrection==="string"?suppliedCorrection:(window.prompt("What should JARVIS learn or say differently next time?","")||"");if(!correction.trim())return;entry={id:id("memory"),text:("User request: "+request+"\nCorrection from the user: "+correction.trim()).slice(0,8000),source:"correction",role:"user",title:"User correction",createdAt:Date.now()}}else{entry={id:id("memory"),text:("User request: "+request+"\nPreferred JARVIS response: "+message.content).slice(0,8000),source:"feedback",role:"assistant",title:"Helpful response",createdAt:Date.now()}}message.feedback=type;message.reviewed=true;c.updatedAt=Date.now();await memoryPutMany([entry]);save();render();await updateMemoryCount();toast(type==="corrected"?"Correction learned and queued for synchronization.":"Helpful response added to the learning memory.")}
       async function reviewNext(){var target=null,owner=null;state.conversations.some(function(c){return c.messages.some(function(m){if(m.role==="assistant"&&m.reviewNeeded&&!m.reviewed){target=m;owner=c;return true}return false})});if(!target){toast("No uncertain answers are waiting for review.");return}state.active=owner.id;render();var decision=window.prompt("Type APPROVE to accept this answer, or type the correction JARVIS should learn.","APPROVE");if(decision===null)return;if(decision.trim().toUpperCase()==="APPROVE")await feedbackMessage(target.id,"helpful");else if(decision.trim())await feedbackMessage(target.id,"corrected",decision.trim())}
-      function renderMessages(){var c=current(),stream=q("#stream"),shouldStick=state.sending||chatStickToBottom||chatDistance()<90,last=c.messages[c.messages.length-1],newAssistant=!!(last&&last.id!==lastRenderedMessageId&&last.role==="assistant");q("#messages").innerHTML=c.messages.map(function(m){var time=new Date(m.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),feedback=m.role==="assistant"?'<button class="feedback-msg '+(m.feedback==="helpful"?"selected":"")+'" data-feedback="helpful" data-id="'+m.id+'">✓ HELPFUL</button><button class="feedback-msg '+(m.feedback==="corrected"?"selected":"")+'" data-feedback="corrected" data-id="'+m.id+'">✎ CORRECT</button>'+(m.reviewNeeded&&!m.reviewed?'<span class="review-flag">HUMAN REVIEW NEEDED</span>':""):"";return'<article class="message '+m.role+'" data-message-id="'+m.id+'"><div class="msg-avatar">'+(m.role==="assistant"?reactorMini():"ER")+'</div><div class="msg-col"><div class="msg-meta"><strong>'+(m.role==="assistant"?"JARVIS":"YOU")+'</strong><span>'+time+'</span></div><div class="bubble">'+formatted(m.content)+(m.image?'<div class="image-wrap"><img alt="AI generated result" src="'+m.image+'"><a download="jarvis-vision.jpg" href="'+m.image+'">DOWNLOAD IMAGE</a></div>':"")+(m.mission?missionCard(m.mission,m.id):"")+'</div><div class="tools"><button class="copy-msg" data-text="'+encodeURIComponent(m.content)+'">□ COPY</button>'+(m.role==="assistant"?'<button class="speak-msg" data-text="'+encodeURIComponent(m.content)+'">◖ SPEAK</button>':"")+feedback+'</div></div></article>'}).join("")+(state.sending?'<article class="message assistant"><div class="msg-avatar">'+reactorMini()+'</div><div class="msg-col"><div class="msg-meta"><strong>JARVIS</strong><span>PROCESSING</span></div><div class="thinking"><i></i><i></i><i></i><span>ANALYZING REQUEST</span></div></div></article>':"");lastRenderedMessageId=last?last.id:"";qa(".copy-code").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(decodeURIComponent(b.dataset.code));toast("Code copied.")}});qa(".copy-msg").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(decodeURIComponent(b.dataset.text));toast("Message copied.")}});qa(".speak-msg").forEach(function(b){b.onclick=function(){speak(decodeURIComponent(b.dataset.text))}});qa(".feedback-msg").forEach(function(b){b.onclick=function(){feedbackMessage(b.dataset.id,b.dataset.feedback)}});qa(".image-wrap img").forEach(function(img){img.onload=function(){if(chatStickToBottom)scrollChat("auto")}});wireMissionButtons();updateReviewCount();if(shouldStick)scrollChat(state.sending?"auto":"smooth");else updateJumpButton(newAssistant)}
+      function renderMessages(){var c=current(),stream=q("#stream"),shouldStick=state.sending||chatStickToBottom||chatDistance()<90,last=c.messages[c.messages.length-1],newAssistant=!!(last&&last.id!==lastRenderedMessageId&&last.role==="assistant");q("#messages").innerHTML=c.messages.map(function(m){var time=new Date(m.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),feedback=m.role==="assistant"?'<button class="feedback-msg '+(m.feedback==="helpful"?"selected":"")+'" data-feedback="helpful" data-id="'+m.id+'">✓ HELPFUL</button><button class="feedback-msg '+(m.feedback==="corrected"?"selected":"")+'" data-feedback="corrected" data-id="'+m.id+'">✎ CORRECT</button>'+(m.reviewNeeded&&!m.reviewed?'<span class="review-flag">HUMAN REVIEW NEEDED</span>':""):"";return'<article class="message '+m.role+'" data-message-id="'+m.id+'"><div class="msg-avatar">'+(m.role==="assistant"?reactorMini():"ER")+'</div><div class="msg-col"><div class="msg-meta"><strong>'+(m.role==="assistant"?"JARVIS":"YOU")+'</strong><span>'+time+'</span></div><div class="bubble">'+formatted(m.content)+(m.image?'<div class="image-wrap"><img alt="AI generated result" src="'+m.image+'"><a download="jarvis-vision.jpg" href="'+m.image+'">DOWNLOAD IMAGE</a></div>':"")+(m.mission?missionCard(m.mission,m.id):"")+'</div><div class="tools"><button class="copy-msg" data-text="'+encodeURIComponent(m.content)+'">□ COPY</button>'+(m.role==="assistant"?'<button class="speak-msg" data-text="'+encodeURIComponent(m.content)+'">◖ SPEAK</button>':"")+feedback+'</div></div></article>'}).join("")+(state.sending?'<article class="message assistant"><div class="msg-avatar">'+reactorMini()+'</div><div class="msg-col"><div class="msg-meta"><strong>JARVIS</strong><span>PROCESSING</span></div><div class="thinking"><i></i><i></i><i></i><span>'+esc(state.aiStage||"ANALYZING REQUEST")+'</span></div></div></article>':"");lastRenderedMessageId=last?last.id:"";qa(".copy-code").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(decodeURIComponent(b.dataset.code));toast("Code copied.")}});qa(".copy-msg").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(decodeURIComponent(b.dataset.text));toast("Message copied.")}});qa(".speak-msg").forEach(function(b){b.onclick=function(){speak(decodeURIComponent(b.dataset.text))}});qa(".feedback-msg").forEach(function(b){b.onclick=function(){feedbackMessage(b.dataset.id,b.dataset.feedback)}});qa(".image-wrap img").forEach(function(img){img.onload=function(){if(chatStickToBottom)scrollChat("auto")}});wireMissionButtons();updateReviewCount();if(shouldStick)scrollChat(state.sending?"auto":"smooth");else updateJumpButton(newAssistant)}
       function renderAttachments(){q("#attachments").innerHTML=state.attachments.map(function(a,i){return'<span class="attachment"><i>'+(a.kind==="image"?"IMG":a.kind==="audio"?"AUD":a.kind==="psd"?"PSD":a.kind==="office"?"MSO":a.kind==="document"?"DOC":"TXT")+'</i>'+esc(a.name)+'<small>'+Math.ceil(a.size/1024)+' KB</small><button data-remove="'+i+'">×</button></span>'}).join("");qa("[data-remove]").forEach(function(b){b.onclick=function(){state.attachments.splice(Number(b.dataset.remove),1);renderAttachments()}});q("#contextCount").textContent=state.attachments.length?state.attachments.length+" INPUT"+(state.attachments.length>1?"S":""):"LOCAL";requestAnimationFrame(updateComposerInset)}
       function inputChanged(){q("#send").disabled=!q("#input").value.trim()||state.sending;q("#input").style.height="auto";q("#input").style.height=Math.min(q("#input").scrollHeight,105)+"px";requestAnimationFrame(updateComposerInset)}
       function clearChat(){var c=current();c.title="New transmission";c.messages=[];c.updatedAt=Date.now();save();render();toast("Conversation memory cleared.")}
@@ -406,9 +410,11 @@ const HTML = String.raw`<!doctype html>
         if(!answer)throw new Error("Ollama returned an empty response.");
         return answer
       }
-      async function postJson(endpoint,body){var res=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}),data=await res.json();if(!res.ok||data.error)throw new Error(data.error||"JARVIS is unavailable.");return data}
+      async function postJson(endpoint,body,timeoutMs){var controller=new AbortController(),limit=Math.max(5000,Number(timeoutMs)||180000),timer=setTimeout(function(){controller.abort()},limit);try{var res=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:controller.signal}),data;try{data=await res.json()}catch(parseError){throw new Error("JARVIS returned an unreadable response. Check the deployment logs.")}if(!res.ok||data.error)throw new Error(data.error||"JARVIS is unavailable.");return data}catch(error){if(error&&error.name==="AbortError")throw new Error("The AI request exceeded "+Math.round(limit/1000)+" seconds. Test the provider connection in Settings and try again.");throw error}finally{clearTimeout(timer)}}
+      function beginAiProgress(provider,mode){var timers=[],label=provider==="auto"?"UNIFIED BRAIN · SELECTING BEST AI":provider==="gemini"?"CONTACTING GOOGLE GEMINI":provider==="ollama"?"CONTACTING LOCAL OLLAMA":"CONTACTING CLOUDFLARE AI";state.aiStage=label;timers.push(setTimeout(function(){if(state.sending){state.aiStage=mode==="code"?"GENERATING CODE":"GENERATING RESPONSE";renderMessages()}},4500));timers.push(setTimeout(function(){if(state.sending){state.aiStage=state.settings.reflectionMode||state.settings.reasoningPower!=="standard"?"REVIEWING AND SELF-CORRECTING":"FINALIZING RESPONSE";renderMessages()}},18000));return function(){timers.forEach(clearTimeout);state.aiStage=""}}
+      async function testGeminiConnection(){var button=q("#testGemini"),status=q("#geminiStatus");button.disabled=true;status.textContent="Testing the deployed Gemini secret and model…";try{var data=await postJson("/api/gemini-test",{},25000);status.textContent="ONLINE · "+data.model+" · "+data.latencyMs+" ms";toast("Gemini connection is online.");if(state.settings.autoSpeak)speak("Gemini connection is online, "+(state.settings.title||"sir")+".")}catch(error){status.textContent="FAILED · "+error.message;toast("Gemini test failed: "+error.message);if(state.settings.autoSpeak)speak("The Gemini connection test failed. "+error.message)}finally{button.disabled=false}}
       var naturalOriginalPrompt="";
-      function localReply(prompt,response,speech){var shown=naturalOriginalPrompt||prompt,c=current(),now=Date.now();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:shown,createdAt:now});c.messages.push({id:id("msg"),role:"assistant",content:response,createdAt:Date.now()});if(c.messages.length===2)c.title=shown.replace(/\s+/g," ").slice(0,48);c.updatedAt=Date.now();q("#input").value="";save();render();if(state.settings.autoSpeak&&speech!==false)speak(typeof speech==="string"?speech:response)}
+      function localReply(prompt,response,speech){var shown=naturalOriginalPrompt||prompt,c=current(),now=Date.now();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:shown,createdAt:now});c.messages.push({id:id("msg"),role:"assistant",content:response,createdAt:Date.now()});if(c.messages.length===2)c.title=shown.replace(/\s+/g," ").slice(0,48);c.updatedAt=Date.now();q("#input").value="";save();render();if(state.settings.autoSpeak)speak(typeof speech==="string"?speech:response)}
       function openExternal(url){var opened=null;try{opened=window.open(url,"_blank","noopener,noreferrer")}catch(e){}return opened}
       async function runDesktopExtension(prompt,api){var match,query,result,capabilities,lower=prompt.toLowerCase().trim(),explicit=false;match=prompt.match(/^\/tools?(?:\s+(.+))?$/i)||prompt.match(/^open\s+(?:windows\s+)?(?:tool|utility)\s+(.+)$/i);if(match){explicit=true;query=(match[1]||"").trim();if(!api){localReply(prompt,"Windows tools require the genuine JARVIS EXE or MSI. Every previous JARVIS feature remains available in this edition.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**WINDOWS TOOL CATALOG**\n"+capabilities.tools.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /tool followed by the exact tool name. JARVIS will ask before opening it.",false);return true}result=await api.openTool(query);if(result.status==="opened")localReply(prompt,"Opening **"+result.target+"**. JARVIS did not type or execute anything inside the tool.",false);else if(result.status==="cancelled")localReply(prompt,"Opening "+result.target+" was cancelled.",false);else localReply(prompt,"I could not match that Windows tool. Use /tools to view the approved catalog.",false)}catch(error){localReply(prompt,"The Windows tool action was blocked or unavailable. "+error.message,false)}return true}match=prompt.match(/^\/folders?(?:\s+(.+))?$/i)||prompt.match(/^open\s+(?:the\s+)?folder\s+(.+)$/i);if(match){explicit=true;query=(match[1]||"").trim();if(!api){localReply(prompt,"Local folder commands require the genuine JARVIS EXE or MSI. Browser and PWA editions remain sandboxed.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**WINDOWS FOLDER CATALOG**\n"+capabilities.folders.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /folder followed by a folder name.",false);return true}result=await api.openFolder(query);if(result.status==="opened")localReply(prompt,"Opening **"+result.target+"**.",false);else if(result.status==="cancelled")localReply(prompt,"Opening "+result.target+" was cancelled.",false);else localReply(prompt,"I could not match that folder. Use /folders to view the approved locations.",false)}catch(error){localReply(prompt,"The folder action was blocked or unavailable. "+error.message,false)}return true}match=prompt.match(/^\/(?:diagnose|diagnostic|diagnostics)(?:\s+(.+))?$/i)||prompt.match(/^run\s+(ipconfig|systeminfo|whoami|tasklist|driverquery|netstat|route|arp|powercfg|hostname)(?:\s+report)?$/i);if(match){query=(match[1]||"").trim();if(!api){localReply(prompt,"Local diagnostics require the genuine JARVIS EXE or MSI. No previous JARVIS functions have been removed.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**READ-ONLY DIAGNOSTICS**\n"+capabilities.diagnostics.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /diagnose followed by a diagnostic name. Results appear in chat and may synchronize when cloud sync is enabled.",false);return true}result=await api.runDiagnostic(query);if(result.status==="completed")localReply(prompt,"**LOCAL DIAGNOSTIC — "+result.target.toUpperCase()+"**\n\n"+result.output+"\n\nThe fixed read-only command completed. Its output is now part of this conversation.",false);else if(result.status==="cancelled")localReply(prompt,"The "+result.target+" diagnostic was cancelled.",false);else localReply(prompt,"I could not match that diagnostic. Use /diagnostics to view the approved list.",false)}catch(error){localReply(prompt,"The diagnostic was blocked or unavailable. "+error.message,false)}return true}match=prompt.match(/^\/pc(?:\s+(.+))?$/i)||prompt.match(/^(?:please\s+)?(lock|restart|reboot|shutdown|shut down|hibernate)\s+(?:my\s+)?(?:pc|computer)$/i)||prompt.match(/^sign out of windows$/i);if(match){query=(match[1]||(/^sign out/i.test(prompt)?"sign out":"")).trim();if(!api){localReply(prompt,"PC session and power actions require the genuine JARVIS EXE or MSI.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**CONFIRMED PC ACTIONS**\n"+capabilities.powerActions.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /pc followed by an action. JARVIS requires two native confirmations and defaults both dialogs to Cancel.",false);return true}result=await api.powerAction(query);if(result.status==="started")localReply(prompt,"The confirmed Windows action **"+result.target+"** has started.",false);else if(result.status==="cancelled")localReply(prompt,"The "+result.target+" action was cancelled. Nothing was changed.",false);else localReply(prompt,"I could not match that PC action. Use /pc to view the approved list.",false)}catch(error){localReply(prompt,"The PC action was blocked or unavailable. "+error.message,false)}return true}if(api){match=prompt.match(/^open\s+(.+)$/i);if(match&&!/^(?:https?:\/\/|www\.|google$|youtube$|gmail$|outlook$|chatgpt$|github$|cloudflare$|facebook$|messenger$|maps$)/i.test(match[1].trim())){query=match[1].trim();try{result=await api.openTool(query);if(result.status==="opened"){localReply(prompt,"Opening **"+result.target+"**.",false);return true}if(result.status==="cancelled"){localReply(prompt,"Opening "+result.target+" was cancelled.",false);return true}result=await api.openFolder(query);if(result.status==="opened"){localReply(prompt,"Opening **"+result.target+"**.",false);return true}if(result.status==="cancelled"){localReply(prompt,"Opening "+result.target+" was cancelled.",false);return true}}catch(error){localReply(prompt,"The native Windows action was blocked or unavailable. "+error.message,false);return true}}}return false}
       function calculate(expression){var text=String(expression||"").trim(),i=0;if(!text||text.length>160||!/^[0-9+\-*/%().\s]+$/.test(text))throw new Error("Use numbers and +, -, *, /, %, or parentheses only.");function skip(){while(/\s/.test(text.charAt(i)))i++}function number(){skip();var start=i,dots=0;while(/[0-9.]/.test(text.charAt(i))){if(text.charAt(i)===".")dots++;i++}if(start===i||dots>1)throw new Error("That arithmetic expression is not valid.");var value=Number(text.slice(start,i));if(!Number.isFinite(value))throw new Error("That number is outside the supported range.");return value}function primary(){skip();if(text.charAt(i)==="("){i++;var value=expressionParser();skip();if(text.charAt(i)!==")")throw new Error("A closing parenthesis is missing.");i++;return value}return number()}function unary(){skip();if(text.charAt(i)==="+"){i++;return unary()}if(text.charAt(i)==="-"){i++;return-unary()}return primary()}function term(){var value=unary();while(true){skip();var op=text.charAt(i);if(op!=="*"&&op!=="/"&&op!=="%")break;i++;var right=unary();if((op==="/"||op==="%")&&right===0)throw new Error("Division by zero is not permitted.");value=op==="*"?value*right:op==="/"?value/right:value%right}return value}function expressionParser(){var value=term();while(true){skip();var op=text.charAt(i);if(op!=="+"&&op!=="-")break;i++;var right=term();value=op==="+"?value+right:value-right}return value}var result=expressionParser();skip();if(i!==text.length||!Number.isFinite(result))throw new Error("That arithmetic expression is not valid.");return Math.abs(result)<1e-12?0:Number(result.toPrecision(14))}
@@ -438,7 +444,7 @@ const HTML = String.raw`<!doctype html>
       function naturalIntentCommand(input){var original=String(input||"").trim(),text=original.replace(/^(?:hey\s+)?jarvis\s*[,.:;-]?\s*/i,"").replace(/^(?:(?:please\s+)?(?:can|could|would|will)\s+you\s+|i\s+(?:want|need)\s+you\s+to\s+|please\s+)/i,"").trim(),match;if(!text||text.charAt(0)==="/")return original;if(/^(?:show|open|display|give me)\s+(?:the\s+)?(?:help|help center|tutorial|commands?|functions?|capabilities)$/i.test(text)||/^(?:what|which)\s+(?:commands|functions|features)\s+(?:can|do)\s+you/i.test(text))return"/help";if(/^(?:start|create|open|make)\s+(?:a\s+)?new\s+(?:chat|conversation|transmission)$/i.test(text))return"/new";if(/^(?:clear|erase|delete)\s+(?:this|the|current)\s+(?:chat|conversation|transmission)$/i.test(text))return"/clear";if(/^(?:learn|study|remember|use)\s+(?:from\s+)?(?:these|the|my)?\s*(?:attached|uploaded)?\s*(?:files?|documents?|code|workbook|spreadsheet|presentation|psd)$/i.test(text)||/^(?:analyze and remember|save to (?:your )?memory)\s+(?:these|the|my)\s+(?:files?|documents?)$/i.test(text))return"/learnfiles";match=text.match(/^(?:deeply research|do (?:a )?deep research (?:about|on|for)|investigate with sources|research thoroughly)\s+(.+)$/i);if(match)return"/deepresearch "+match[1];match=text.match(/^(?:find|search for|locate)\s+(?:a\s+)?(?:local|computer|pc)?\s*(?:file|document)\s+(?:named|called|containing|about)?\s*(.+)$/i);if(match)return"/filesearch "+match[1];match=text.match(/^(?:update|refresh|research and update)\s+(?:your\s+)?knowledge\s+(?:about|on|for)\s+(.+)$/i);if(match)return"/learn "+match[1];if(/^(?:update|refresh)\s+(?:your\s+)?knowledge$/i.test(text))return"/learn";match=text.match(/^(?:create|build|prepare|plan|make)\s+(?:a\s+)?mission(?: plan)?\s+(?:for|to|about)\s+(.+)$/i);if(match)return"/mission "+match[1];if(/^(?:show|open|display|review)\s+(?:my\s+|the\s+)?missions?(?: control)?$/i.test(text))return"/missions";match=text.match(/^(?:look at|analyze|inspect|check|review|read)\s+(?:my|the)\s+screen(?:\s+(?:and|for|to)\s+(.+))?$/i);if(match)return"/screen "+(match[1]||"Describe what is visible and identify anything requiring attention");if(/^(?:run|perform|start|do)\s+(?:an\s+)?(?:it|pc|computer|windows)\s+(?:health\s+)?check$/i.test(text)||/^(?:check|diagnose)\s+(?:my\s+)?(?:pc|computer|windows)\s+health$/i.test(text))return"/itcheck";if(/^(?:give|show|prepare|read)\s+(?:me\s+)?(?:my\s+|the\s+)?(?:daily|proactive|system)?\s*briefing$/i.test(text))return"/briefing";if(/^(?:show|list|display)\s+(?:your\s+|the\s+)?(?:skills|smart skills)$/i.test(text))return"/skills";match=text.match(/^(?:remember|memorize|save (?:this|that) to (?:your )?memory)\s+(?:that\s+)?(.+)$/i);if(match)return"/remember "+match[1];match=text.match(/^(?:send|perform|run)\s+(?:an\s+)?iot\s+(?:command|action)?\s*(.+)$/i);if(match)return"/iot "+match[1];if(/^(?:stop|disable|turn off)\s+(?:your\s+)?(?:voice|speech|speaking)$/i.test(text))return"/mute";match=text.match(/^(?:say|speak|read aloud)\s+(.+)$/i);if(match)return"/speak "+match[1];match=text.match(/^(?:calculate|compute|solve|what is)\s+([0-9().+*\/%\s-]+)$/i);if(match)return"/calculate "+match[1];if(/^(?:show|check|display|give me)\s+(?:my\s+|the\s+)?(?:system|device|computer|pc)\s+(?:status|information|info)$/i.test(text))return"/system";if(/^(?:show|list|display)\s+(?:my\s+|the\s+)?installed\s+apps?$/i.test(text))return"/apps";if(/^(?:show|list|display)\s+(?:the\s+)?windows\s+(?:tools|utilities)$/i.test(text))return"/tools";if(/^(?:show|list|display)\s+(?:the\s+)?(?:available|approved)?\s*folders$/i.test(text))return"/folders";if(/^(?:show|list|display)\s+(?:the\s+)?(?:available|approved|read.only)?\s*diagnostics$/i.test(text))return"/diagnostics";if(/^(?:show|list|display)\s+(?:the\s+)?(?:pc|power)\s+actions$/i.test(text))return"/pc";if(text!==original&&(/^(?:open|launch|search|map|lock|restart|reboot|shutdown|shut down|hibernate|sign out|run)\b/i.test(text)||/\bweather\b/i.test(text)))return text;return original}
       function autoDirectedMode(prompt){var text=String(prompt||"").replace(/^(?:hey\s+)?jarvis\s*[,.:;-]?\s*/i,"").replace(/^(?:(?:please\s+)?(?:can|could|would|will)\s+you\s+|i\s+(?:want|need)\s+you\s+to\s+|please\s+)/i,"").trim();if(/^(?:create|generate|make|draw|design)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|illustration|logo|poster|wallpaper|graphic|artwork)\b/i.test(text)||/\b(?:generate|create)\s+(?:an?\s+)?image\b/i.test(text))return"image";if(/^(?:write|create|generate|build|debug|fix|refactor|review|explain|convert)\b[\s\S]*\b(?:code|script|program|function|class|api|database|query|website|webpage|login page|app)\b/i.test(text)||/\b(?:html|css|javascript|typescript|php|java|python|sql|c\+\+|c#|powershell|bash|react|vue|node\.js)\b/i.test(text)||text.indexOf(String.fromCharCode(96,96,96))>-1)return"code";return"chat"}
       async function sendV2(){
-        naturalOriginalPrompt="";var c=current(),originalPrompt=q("#input").value.trim(),prompt=naturalIntentCommand(originalPrompt),directedMode=state.settings.cloudModel==="auto"?autoDirectedMode(originalPrompt):c.mode;if(prompt!==originalPrompt)naturalOriginalPrompt=originalPrompt;
+        naturalOriginalPrompt="";var c=current(),originalPrompt=q("#input").value.trim(),prompt=naturalIntentCommand(originalPrompt),directedMode=c.mode==="chat"?autoDirectedMode(originalPrompt):c.mode,stopAiProgress=function(){};if(prompt!==originalPrompt)naturalOriginalPrompt=originalPrompt;
         if(!prompt||state.sending)return;
         if(await runSmartAction(prompt))return;
         var iotMatch=prompt.match(/^\/iot\s+(.+)$/i);
@@ -472,7 +478,7 @@ const HTML = String.raw`<!doctype html>
         var context=textAttachments.length?"\n\nAttached context:\n"+textAttachments.map(function(a){return"--- "+a.name+" ---\n"+a.content}).join("\n\n"):"";
         var memory=await memorySearch(prompt),msg={id:id("msg"),role:"user",content:prompt,createdAt:Date.now()};
         c.messages.push(msg);if(c.messages.length===1)c.title=prompt.replace(/\s+/g," ").slice(0,48);c.updatedAt=Date.now();
-        q("#input").value="";state.attachments=[];chatStickToBottom=true;state.sending=true;memoryAdd(prompt,"jarvis","user",c.title).then(updateMemoryCount).catch(function(){});save();render();
+        q("#input").value="";state.attachments=[];chatStickToBottom=true;state.sending=true;stopAiProgress=beginAiProgress(state.settings.provider,directedMode);memoryAdd(prompt,"jarvis","user",c.title).then(updateMemoryCount).catch(function(){});save();render();
         try{
           var data;
           if(directedMode==="image"){
@@ -484,25 +490,34 @@ const HTML = String.raw`<!doctype html>
             if(state.settings.webSearch){var researchData=await postJson("/api/research",{query:prompt});research=researchData.context||""}
             data={response:await askOllama({messages:c.messages,mode:directedMode},context,memory,research)}
           }else{
-            data=await postJson("/api/chat",{
-              provider:state.settings.provider,
-              mode:directedMode,modelKey:state.settings.cloudModel,reasoningPower:state.settings.reasoningPower,contextWindow:state.settings.contextWindow,temperature:state.settings.creativity,concise:state.settings.concise,userTitle:state.settings.title,
-              messages:c.messages.map(function(m){return{role:m.role,content:m.content}}),context:context,memory:memory,
-              semanticMemory:state.settings.memoryEnabled,webSearch:state.settings.webSearch,reflectionMode:state.settings.reflectionMode,
-              image:imageAttachment?imageAttachment.dataUrl:""
-            })
+            try{
+              data=await postJson("/api/chat",{
+                provider:state.settings.provider,
+                mode:directedMode,modelKey:state.settings.cloudModel,reasoningPower:state.settings.reasoningPower,contextWindow:state.settings.contextWindow,temperature:state.settings.creativity,concise:state.settings.concise,userTitle:state.settings.title,
+                messages:c.messages.map(function(m){return{role:m.role,content:m.content}}),context:context,memory:memory,
+                semanticMemory:state.settings.memoryEnabled,webSearch:state.settings.webSearch,reflectionMode:state.settings.reflectionMode,
+                image:imageAttachment?imageAttachment.dataUrl:""
+              })
+            }catch(cloudError){
+              var localFallback=state.settings.provider==="auto"&&!imageAttachment&&window.jarvisDesktop&&typeof window.jarvisDesktop.askLocalAI==="function";
+              if(!localFallback)throw cloudError;
+              state.aiStage="CLOUD ROUTES BUSY · TRYING LOCAL OLLAMA";renderMessages();
+              var fallbackResearch="";
+              if(state.settings.webSearch){try{var fallbackResearchData=await postJson("/api/research",{query:prompt},30000);fallbackResearch=fallbackResearchData.context||""}catch(researchFallbackError){}}
+              data={response:await askOllama({messages:c.messages,mode:directedMode},context,memory,fallbackResearch),toolsUsed:["unified_local_fallback"]}
+            }
           }
           var reply={id:id("msg"),role:"assistant",content:directedMode==="image"?(data.demo?"Vision module ready. Deploy with the Cloudflare Workers AI binding to generate this image.":"Image synthesis complete. You may download the result below."):(data.response||"No response was returned."),image:data.image,reviewNeeded:!!(data.reflection&&data.reflection.uncertain),reviewed:false,toolsUsed:Array.isArray(data.toolsUsed)?data.toolsUsed:[],createdAt:Date.now()};
           c.messages.push(reply);c.updatedAt=Date.now();if(state.settings.autoSpeak)speak(reply.content)
-        }catch(e){c.messages.push({id:id("msg"),role:"assistant",content:"I am sorry, "+(state.settings.title||"sir")+". "+e.message,createdAt:Date.now()})}
-        finally{state.sending=false;save();render()}
+        }catch(e){var failedReply={id:id("msg"),role:"assistant",content:"I am sorry, "+(state.settings.title||"sir")+". "+e.message,createdAt:Date.now()};c.messages.push(failedReply);c.updatedAt=Date.now();if(state.settings.autoSpeak)speak(failedReply.content)}
+        finally{stopAiProgress();state.sending=false;save();render()}
       }
       function exportChat(){var c=current(),text="# "+c.title+"\n\n"+c.messages.map(function(m){return"## "+(m.role==="user"?"You":"JARVIS")+"\n\n"+m.content+"\n"}).join("\n"),blob=new Blob([text],{type:"text/markdown"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(c.title.replace(/[^a-z0-9]+/gi,"-").toLowerCase()||"jarvis-chat")+".md";a.click();URL.revokeObjectURL(url)}
       function openNav(){q("#sidebar").classList.add("open");q("#backdrop").classList.add("open")}function closeNav(){q("#sidebar").classList.remove("open");q("#backdrop").classList.remove("open")}
       function openSettings(){var panel=q(".settings");q("#modal").classList.add("open");panel.scrollTop=0;requestAnimationFrame(function(){q("#closeSettings").focus()})}function closeSettings(){q("#modal").classList.remove("open")}
       function applySettings(){state.settings.provider=state.settings.provider==="ollama"?"ollama":"cloudflare";if(!modelLabels[state.settings.cloudModel])state.settings.cloudModel="auto";state.settings.reasoningPower=["standard","deep","max"].includes(state.settings.reasoningPower)?state.settings.reasoningPower:"deep";state.settings.contextWindow=[32000,64000,120000].includes(Number(state.settings.contextWindow))?Number(state.settings.contextWindow):64000;state.settings.weatherLocation=String(state.settings.weatherLocation||"Iloilo City, Philippines").slice(0,120);state.settings.cloudSync=state.settings.cloudSync!==false;state.settings.reflectionMode=state.settings.reflectionMode!==false;state.settings.neuralVoice=state.settings.neuralVoice===true;state.settings.wakeWordEnabled=state.settings.wakeWordEnabled===true;q("#provider").value=state.settings.provider;q("#cloudModel").value=state.settings.cloudModel;q("#reasoningPower").value=state.settings.reasoningPower;q("#contextWindow").value=String(state.settings.contextWindow);q("#ollamaUrl").value=state.settings.ollamaUrl;q("#ollamaModel").value=state.settings.ollamaModel;q("#webSearch").checked=state.settings.webSearch;q("#memoryEnabled").checked=state.settings.memoryEnabled;q("#cloudSync").checked=state.settings.cloudSync;q("#reflectionMode").checked=state.settings.reflectionMode;q("#weatherLocation").value=state.settings.weatherLocation;q("#autoSpeak").checked=state.settings.autoSpeak;q("#neuralVoice").checked=state.settings.neuralVoice;updateWakeToggle(state.settings.wakeWordEnabled,state.settings.wakeWordEnabled);q("#concise").checked=state.settings.concise;q("#creativity").value=state.settings.creativity;q("#creativityValue").textContent=Math.round(state.settings.creativity*100)+"%";q("#title").value=state.settings.title;q("#voiceStatus").textContent=state.settings.wakeWordEnabled?"WAKE ARMED":state.settings.autoSpeak?"ACTIVE":"STANDBY";q("#voiceStatus").classList.toggle("on",state.settings.autoSpeak||state.settings.wakeWordEnabled);if(!state.settings.cloudSync)setSyncStatus("OFF",false,"Cloud synchronization is disabled on this device.");updateWakeStatus(state.settings.wakeWordEnabled?"starting":"off");setTimeout(syncWakeWordSetting,0);updateMemoryCount();updateReviewCount()}
       var applySettingsV10=applySettings;
-      applySettings=function(){var requestedProvider=state.settings.provider;applySettingsV10();if(requestedProvider==="gemini"){state.settings.provider="gemini";q("#provider").value="gemini"}state.settings.missionControlEnabled=state.settings.missionControlEnabled!==false;state.settings.screenVisionEnabled=state.settings.screenVisionEnabled!==false;state.settings.itCopilotEnabled=state.settings.itCopilotEnabled!==false;state.settings.proactiveBriefingEnabled=state.settings.proactiveBriefingEnabled!==false;state.settings.knowledgeAgentEnabled=state.settings.knowledgeAgentEnabled!==false;q("#missionControlEnabled").checked=state.settings.missionControlEnabled;q("#screenVisionEnabled").checked=state.settings.screenVisionEnabled;q("#itCopilotEnabled").checked=state.settings.itCopilotEnabled;q("#proactiveBriefingEnabled").checked=state.settings.proactiveBriefingEnabled;q("#knowledgeAgentEnabled").checked=state.settings.knowledgeAgentEnabled};
+      applySettings=function(){var requestedProvider=state.settings.provider;applySettingsV10();if(requestedProvider==="gemini"||requestedProvider==="auto"){state.settings.provider=requestedProvider;q("#provider").value=requestedProvider}state.settings.missionControlEnabled=state.settings.missionControlEnabled!==false;state.settings.screenVisionEnabled=state.settings.screenVisionEnabled!==false;state.settings.itCopilotEnabled=state.settings.itCopilotEnabled!==false;state.settings.proactiveBriefingEnabled=state.settings.proactiveBriefingEnabled!==false;state.settings.knowledgeAgentEnabled=state.settings.knowledgeAgentEnabled!==false;q("#missionControlEnabled").checked=state.settings.missionControlEnabled;q("#screenVisionEnabled").checked=state.settings.screenVisionEnabled;q("#itCopilotEnabled").checked=state.settings.itCopilotEnabled;q("#proactiveBriefingEnabled").checked=state.settings.proactiveBriefingEnabled;q("#knowledgeAgentEnabled").checked=state.settings.knowledgeAgentEnabled};
       q("#newChat").onclick=function(){newChat()};
       qa(".mode").forEach(function(b){b.onclick=function(){setMode(b.dataset.mode)}});
       q("#historySearch").oninput=renderHistory;
@@ -526,6 +541,8 @@ const HTML = String.raw`<!doctype html>
       q("#modal").onclick=function(e){if(e.target===q("#modal"))closeSettings()};
       q("#creativity").oninput=function(){q("#creativityValue").textContent=Math.round(Number(this.value)*100)+"%"};
       q("#wakeWordEnabled").onchange=async function(){var enabled=this.checked===true;state.settings.wakeWordEnabled=enabled;state.syncMeta.settingsUpdatedAt=Date.now();updateWakeToggle(enabled,enabled);save();if(enabled){updateWakeStatus("starting","Starting the selected wake-word listener.");await startWakeWordListener()}else{await stopWakeWordListener(true);updateWakeStatus("off");toast("Always listen for Hey JARVIS is OFF.")}};
+      q("#maxBrain").onclick=function(){q("#provider").value="auto";q("#cloudModel").value="auto";q("#reasoningPower").value="max";q("#contextWindow").value="120000";q("#reflectionMode").checked=true;q("#webSearch").checked=true;q("#autoSpeak").checked=true;q("#neuralVoice").checked=true;q("#saveSettings").click();toast("Maximum Unified JARVIS Brain activated.")};
+      q("#testGemini").onclick=testGeminiConnection;
       q("#importChatGPT").onclick=function(){q("#chatgptImport").click()};
       q("#knowledgeAgent").onclick=function(){openKnowledgeAgent("")};
       q("#chatgptImport").onchange=async function(e){var files=Array.from(e.target.files||[]),total=0;if(!files.length)return;q("#memoryCount").textContent="Importing ChatGPT history…";try{for(var i=0;i<files.length;i++)total+=await importChatGPTExport(files[i]);await updateMemoryCount();toast(total.toLocaleString()+" ChatGPT messages imported locally. Cloud sync will upload the newest entries within its encrypted snapshot limit.")}catch(error){q("#memoryCount").textContent=error.message;toast("Import failed: "+error.message)}e.target.value=""};
@@ -609,7 +626,7 @@ const LOGIN_HTML = String.raw`<!doctype html>
       <button class="submit" id="submit" type="submit">ESTABLISH SECURE LINK</button>
       <div class="status" id="status" role="status" aria-live="polite">AWAITING CREDENTIALS</div>
     </form>
-    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.13.5</div>
+    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.13.6</div>
   </main>
   <script>
     (function(){
@@ -1117,7 +1134,8 @@ function normalizeKnowledgeProposal(value, sources) {
 async function knowledgeUpdate(request, env) {
   try {
     const body = await readBody(request, 40_000);
-    const provider = body.provider === "gemini" ? "gemini" : "cloudflare";
+    const requestedProvider = ["auto", "gemini", "cloudflare"].includes(body.provider) ? body.provider : "cloudflare";
+    const provider = requestedProvider === "auto" ? (env.GEMINI_API_KEY ? "gemini" : "cloudflare") : requestedProvider;
     const topic = typeof body.topic === "string" ? body.topic.replace(/\s+/g, " ").trim().slice(0, 300) : "";
     if (topic.length < 3) return json({ error: "A knowledge-update topic of at least three characters is required." }, 400);
     if (provider === "cloudflare" && !env.AI) return json({ error: "The Knowledge Update Agent requires the Cloudflare Workers AI binding." }, 503);
@@ -1233,7 +1251,7 @@ function geminiContents(messages, imageMime, imageData) {
       target = { role: "user", parts: [{ text: "Analyze the attached image." }] };
       contents.push(target);
     }
-    target.parts.push({ inline_data: { mime_type: imageMime || "image/png", data: imageData } });
+    target.parts.push({ inlineData: { mimeType: imageMime || "image/png", data: imageData } });
   }
   return contents;
 }
@@ -1248,6 +1266,8 @@ async function geminiGenerate(env, {
   imageMime = "",
   imageData = "",
   jsonSchema = null,
+  timeoutMs = 45_000,
+  maxAttempts = 2,
 } = {}) {
   const apiKey = typeof env.GEMINI_API_KEY === "string" ? env.GEMINI_API_KEY.trim() : "";
   if (!apiKey) throw new Error("Gemini API is selected, but GEMINI_API_KEY is not configured. Run CONFIGURE_GEMINI_API.bat.");
@@ -1261,38 +1281,92 @@ async function geminiGenerate(env, {
     generationConfig.responseMimeType = "application/json";
     generationConfig.responseJsonSchema = jsonSchema;
   }
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-goog-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: String(system || "You are JARVIS.") }] },
-      contents: geminiContents(Array.isArray(messages) ? messages : [], imageMime, imageData),
-      generationConfig,
-    }),
-    signal: AbortSignal.timeout(120_000),
+  const requestBody = JSON.stringify({
+    systemInstruction: { parts: [{ text: String(system || "You are JARVIS.") }] },
+    contents: geminiContents(Array.isArray(messages) ? messages : [], imageMime, imageData),
+    generationConfig,
   });
-  let data;
-  try { data = await response.json(); } catch { data = {}; }
-  if (!response.ok) {
-    const reason = String(data && data.error && data.error.message || `HTTP ${response.status}`).replaceAll(apiKey, "[redacted]").slice(0, 500);
-    throw new Error(`Gemini API error: ${reason}`);
+  const attempts = Math.max(1, Math.min(2, Number(maxAttempts) || 1));
+  const limit = Math.max(5_000, Math.min(60_000, Number(timeoutMs) || 45_000));
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    let response;
+    let data = {};
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: requestBody,
+        signal: AbortSignal.timeout(limit),
+      });
+      try { data = await response.json(); } catch { data = {}; }
+    } catch (error) {
+      const timedOut = error && (error.name === "TimeoutError" || error.name === "AbortError");
+      lastError = new Error(timedOut
+        ? `Gemini did not respond within ${Math.round(limit / 1_000)} seconds.`
+        : `Gemini network error: ${String(error && error.message || "connection failed").slice(0, 300)}`);
+      if (attempt + 1 < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+        continue;
+      }
+      throw lastError;
+    }
+    if (!response.ok) {
+      const reason = String(data && data.error && data.error.message || `HTTP ${response.status}`).replaceAll(apiKey, "[redacted]").slice(0, 500);
+      const transient = [408, 429, 500, 502, 503, 504].includes(response.status);
+      lastError = new Error(response.status === 429
+        ? `Gemini quota or rate limit reached: ${reason}`
+        : `Gemini API error: ${reason}`);
+      if (transient && attempt + 1 < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+        continue;
+      }
+      throw lastError;
+    }
+    const candidate = data && data.candidates && data.candidates[0];
+    const parts = candidate && candidate.content && candidate.content.parts;
+    const text = Array.isArray(parts) ? parts.map((part) => typeof part.text === "string" ? part.text : "").join("").trim() : "";
+    if (!text) {
+      const blocked = String(data && data.promptFeedback && data.promptFeedback.blockReason || "");
+      const finishReason = String(candidate && candidate.finishReason || "");
+      throw new Error(blocked
+        ? `Gemini blocked this request: ${blocked}`
+        : finishReason ? `Gemini returned no text (${finishReason}).` : "Gemini returned an empty response.");
+    }
+    return { response: text, model, usage: data.usageMetadata || null };
   }
-  const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-  const text = Array.isArray(parts) ? parts.map((part) => typeof part.text === "string" ? part.text : "").join("").trim() : "";
-  if (!text) {
-    const blocked = String(data && data.promptFeedback && data.promptFeedback.blockReason || "");
-    throw new Error(blocked ? `Gemini blocked this request: ${blocked}` : "Gemini returned an empty response.");
+  throw lastError || new Error("Gemini did not complete the request.");
+}
+
+async function geminiConnectionTest(env) {
+  const startedAt = Date.now();
+  try {
+    const result = await geminiGenerate(env, {
+      system: "You are a connection diagnostic. Reply with exactly: GEMINI ONLINE",
+      messages: [{ role: "user", content: "Run the connection diagnostic." }],
+      mode: "chat",
+      reasoningPower: "standard",
+      temperature: 0,
+      maxTokens: 256,
+      timeoutMs: 15_000,
+      maxAttempts: 1,
+    });
+    return json({ status: "online", model: result.model, latencyMs: Date.now() - startedAt });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Gemini connection failed.";
+    return json({ error: message.slice(0, 500) }, 502);
   }
-  return { response: text, model, usage: data.usageMetadata || null };
 }
 
 async function chat(request, env) {
   try {
     const body = await readBody(request, 4_000_000);
-    const provider = body.provider === "gemini" ? "gemini" : "cloudflare";
+    const requestedProvider = ["auto", "gemini", "cloudflare"].includes(body.provider) ? body.provider : "cloudflare";
+    const provider = requestedProvider === "auto" ? (env.GEMINI_API_KEY ? "gemini" : "cloudflare") : requestedProvider;
+    let providerFallback = "";
     const mode = body.mode === "code" ? "code" : "chat";
     const reasoningPower = ["standard", "deep", "max"].includes(body.reasoningPower) ? body.reasoningPower : "standard";
     const requestedContext = [32_000, 64_000, 120_000].includes(Number(body.contextWindow)) ? Number(body.contextWindow) : 32_000;
@@ -1347,6 +1421,7 @@ async function chat(request, env) {
       : "");
 
     if (provider === "gemini") {
+      try {
       if (!env.GEMINI_API_KEY) return json({ error: "Gemini API is selected, but GEMINI_API_KEY is not configured. Run CONFIGURE_GEMINI_API.bat." }, 503);
       const outputTokens = reasoningPower === "max" ? 8_192 : reasoningPower === "deep" ? 6_144 : mode === "code" ? 5_120 : 4_096;
       const generated = await geminiGenerate(env, {
@@ -1358,6 +1433,8 @@ async function chat(request, env) {
         maxTokens: outputTokens,
         imageMime,
         imageData,
+        timeoutMs: 45_000,
+        maxAttempts: 2,
       });
       let response = generated.response;
       const reflection = { used: false, revised: false, uncertain: false };
@@ -1370,6 +1447,8 @@ async function chat(request, env) {
             reasoningPower,
             temperature: 0.1,
             maxTokens: 800,
+            timeoutMs: 20_000,
+            maxAttempts: 1,
           });
           const review = critic.response.trim();
           const verdict = (review.match(/^(PASS|REVISE|UNCERTAIN)\b/i) || ["", "UNCERTAIN"])[1].toUpperCase();
@@ -1388,6 +1467,8 @@ async function chat(request, env) {
               maxTokens: outputTokens,
               imageMime,
               imageData,
+              timeoutMs: 35_000,
+              maxAttempts: 1,
             });
             if (revised.response) {
               response = revised.response;
@@ -1404,6 +1485,10 @@ async function chat(request, env) {
       if (semanticContext) toolsUsed.push("semantic_memory");
       if (reflection.used) toolsUsed.push("reflection");
       return json({ response, modelKey: `gemini:${generated.model}`, reflection, toolsUsed, usage: generated.usage });
+      } catch (error) {
+        if (requestedProvider !== "auto" || !env.AI) throw error;
+        providerFallback = "gemini_to_cloudflare";
+      }
     }
 
     if (!env.AI) return json({ response: demoResponse(lastPrompt, mode, title), demo: true });
@@ -1459,6 +1544,7 @@ async function chat(request, env) {
       }
     }
     const toolsUsed = [];
+    if (providerFallback) toolsUsed.push(providerFallback);
     if (imageData) toolsUsed.push("vision");
     if (webContext) toolsUsed.push("web_search");
     if (semanticContext) toolsUsed.push("semantic_memory");
@@ -1914,7 +2000,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "Configure JARVIS_DESKTOP_MANIFEST_URL after publishing the first Windows release.",
-      websiteBuild: "1.13.5",
+      websiteBuild: "1.13.6",
     }, 200, isHead);
   }
   try {
@@ -1937,7 +2023,7 @@ async function desktopUpdate(request, env) {
       version,
       publishedAt: typeof release.publishedAt === "string" ? release.publishedAt.slice(0, 64) : "",
       notes: typeof release.notes === "string" ? release.notes.slice(0, 4_000) : "",
-      websiteBuild: "1.13.5",
+      websiteBuild: "1.13.6",
       installers: { exe, msi },
     }, 200, isHead);
   } catch (error) {
@@ -1945,7 +2031,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "The configured Windows release channel is temporarily unavailable.",
-      websiteBuild: "1.13.5",
+      websiteBuild: "1.13.6",
       error: error instanceof Error ? error.message.slice(0, 240) : "Update service error.",
     }, 502, isHead);
   }
@@ -1957,7 +2043,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/login") return login(request, env);
     if (request.method === "POST" && url.pathname === "/api/logout") return logout();
     if (url.pathname === "/api/health") {
-      return json({ service: "JARVIS", status: "online", build: "1.13.5", ai: Boolean(env.AI) });
+      return json({ service: "JARVIS", status: "online", build: "1.13.6", ai: Boolean(env.AI) });
     }
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/api/desktop-update") return desktopUpdate(request, env);
     const authorized = await isAuthorized(request, env);
@@ -1969,6 +2055,7 @@ export default {
       }
       return json({ error: "Authentication required." }, 401);
     }
+    if (request.method === "POST" && url.pathname === "/api/gemini-test") return geminiConnectionTest(env);
     if (request.method === "POST" && url.pathname === "/api/chat") return chat(request, env);
     if (request.method === "POST" && url.pathname === "/api/mission-plan") return missionPlan(request, env);
     if ((request.method === "GET" || request.method === "PUT") && url.pathname === "/api/sync") return syncSnapshot(request, env, ctx);
