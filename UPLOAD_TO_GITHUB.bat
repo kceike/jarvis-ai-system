@@ -230,7 +230,7 @@ echo ============================================================
 echo SUCCESS: JARVIS was uploaded to:
 echo https://github.com/%JARVIS_GITHUB_REPOSITORY%
 echo.
-echo The v1.13.8 Help Center and compatibility build was started automatically.
+echo The v1.13.9 Gemini diagnostic compatibility hotfix was started automatically.
 echo The GitHub Actions page will open so you can watch its progress.
 echo ============================================================
 echo.

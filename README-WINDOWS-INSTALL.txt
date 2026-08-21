@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.13.8
+JARVIS AI - WINDOWS INSTALLER 1.13.9
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,13 +9,13 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.13.8 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.13.9 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.13.8 keeps every earlier free function and adds a fully updated Help
-Center with code-generation, Unified Brain, live Gemini testing, response-stage,
-interrupted-request recovery, compatibility, and complete command guidance. It
-also retains the Unified JARVIS Brain,
+Version 1.13.9 keeps every earlier free function, corrects the live Gemini test
+for models that accept Low/Medium/High thinking, and immediately recovers a
+request interrupted during app startup, update, reload, sync, or tray restore.
+It also retains the updated Help Center and Unified JARVIS Brain,
 Maximum reasoning, larger context, Deep Research, document/audio analysis,
 neural speech, safe local-file search, and adaptive maximum Ollama configuration.
 Gemini chat and code use the current Interactions API with a live response test,

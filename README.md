@@ -126,8 +126,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.13.8-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.13.8-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.13.9-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.13.9-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -135,7 +135,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.13.8 retains every v1.13.7 feature and earlier slash command. Its Help Center now documents the complete natural-language and slash-command workflow, code generation and copying, Unified Brain routing, the live Gemini Interactions API test, visible response stages and errors, interrupted-request recovery, provider fallback rules, and the `/clear` command. Every normal answer remains in chat and is spoken automatically while Automatic voice response is enabled. All confirmations and permission boundaries remain enforced.
+Version 1.13.9 retains every v1.13.8 feature and earlier slash command. The small Gemini Interactions API diagnostic now uses the model-supported Low thinking level; normal Maximum requests still use High. Interrupted requests are recovered immediately on launch and whenever synchronized state reintroduces an unanswered user message, without the previous eight-second startup gap. Every normal answer remains in chat and is spoken automatically while Automatic voice response is enabled. All confirmations and permission boundaries remain enforced.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
