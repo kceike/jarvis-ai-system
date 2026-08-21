@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.12\.9/);
+  assert.match(html, /BUILD 1\.13\.3/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.12.9");
+  assert.equal((await health.json()).build, "1.13.3");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.12.9");
+  assert.equal(manifest.websiteBuild, "1.13.3");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -183,7 +183,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /id="reviewNext"/);
   assert.match(html, /MULTIMODAL|multimodal/i);
   assert.match(html, /ORCHESTRATOR LLM/);
-  assert.match(html, /image\/png/);
+  assert.match(html, /ANY FILE · SAFE ANALYSIS ONLY/);
   assert.match(html, /\/api\/iot/);
   assert.match(html, /id="jumpLatest"/);
   assert.match(html, /scrollChat/);
@@ -219,13 +219,30 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.12\.9\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.13\.3\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
   assert.match(html, /id="itCopilotEnabled"/);
   assert.match(html, /id="proactiveBriefingEnabled"/);
   assert.match(html, /id="knowledgeAgentEnabled"/);
+  assert.match(html, /id="reasoningPower"/);
+  assert.match(html, /id="contextWindow"/);
+  assert.match(html, /id="neuralVoice"/);
+  assert.match(html, /Auto Director/);
+  assert.match(html, /\/deepresearch \[question\]/);
+  assert.match(html, /\/filesearch \[name or text\]/);
+  assert.match(html, /\/learnfiles/);
+  assert.match(html, /function learnAttachedFiles/);
+  assert.match(html, /function analyzePsdAttachment/);
+  assert.match(html, /Photoshop PSD analysis/);
+  assert.match(html, /Microsoft Office learning/);
+  assert.match(html, /function analyzeOfficeAttachment/);
+  assert.match(html, /sql\|html/);
+  assert.doesNotMatch(html, /\/api\/video/);
+  assert.match(html, /\/api\/document/);
+  assert.match(html, /\/api\/transcribe/);
+  assert.match(html, /\/api\/speech/);
   assert.match(html, /id="knowledgeAgent"/);
   assert.match(html, /id="knowledgeModal"/);
   assert.match(html, /id="knowledgeTopic"/);
@@ -274,7 +291,7 @@ test("documents the complete Knowledge Update Agent workflow in the Help Center"
   assert.match(html, /CONFIGURE_KNOWLEDGE_AGENT\.bat/);
   assert.match(html, /Web research versus knowledge learning/);
   assert.match(html, /Rejected or unselected findings are never saved/);
-  assert.match(html, /Version 1\.12\.9/);
+  assert.match(html, /Version 1\.13\.3/);
 });
 
 test("includes installable website and Windows desktop-app script assets", async () => {
@@ -294,7 +311,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.12\.9"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.13\.3"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -317,10 +334,13 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const buildBatch = await readFile(new URL("../BUILD_WINDOWS_INSTALLERS.bat", import.meta.url), "utf8");
   const configureUpdateBatch = await readFile(new URL("../CONFIGURE_WINDOWS_AUTO_UPDATE.bat", import.meta.url), "utf8");
   const githubUploadBatch = await readFile(new URL("../UPLOAD_TO_GITHUB.bat", import.meta.url), "utf8");
+  const localAiSetup = await readFile(new URL("../SETUP_MAX_LOCAL_AI.bat", import.meta.url), "utf8");
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.12.9");
+  assert.equal(desktopPackage.version, "1.13.3");
+  assert.equal(desktopPackage.dependencies["ag-psd"], "31.0.2");
+  assert.equal(desktopPackage.dependencies.jszip, "3.10.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
   assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
   assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
@@ -338,6 +358,21 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(desktopMain, /jarvis-preload\.cjs/);
   assert.match(jarvisPreload, /contextBridge\.exposeInMainWorld\("jarvisDesktop"/);
   assert.match(jarvisPreload, /jarvis:open-setting/);
+  assert.match(jarvisPreload, /jarvis:search-local-files/);
+  assert.match(jarvisPreload, /jarvis:ask-local-ai/);
+  assert.match(jarvisPreload, /jarvis:analyze-psd/);
+  assert.match(jarvisPreload, /jarvis:analyze-office/);
+  assert.match(desktopMain, /searchLocalFilesFromDesktop/);
+  assert.match(desktopMain, /askLocalAiFromDesktop/);
+  assert.match(desktopMain, /analyzePsdFromDesktop/);
+  assert.match(desktopMain, /analyzeOfficeFromDesktop/);
+  assert.match(desktopMain, /skipLinkedFilesData: true/);
+  assert.match(desktopMain, /Maximum local processing only connects to Ollama on this computer/);
+  assert.match(desktopMain, /showOpenDialog/);
+  assert.match(desktopMain, /LOCAL_SEARCH_MAX_FILES/);
+  assert.match(localAiSetup, /OLLAMA_CONTEXT_LENGTH/);
+  assert.match(localAiSetup, /OLLAMA_FLASH_ATTENTION/);
+  assert.match(localAiSetup, /choice \/C YN/);
   assert.match(jarvisPreload, /jarvis:open-control-panel/);
   assert.match(jarvisPreload, /jarvis:find-apps/);
   assert.match(jarvisPreload, /jarvis:open-app/);
@@ -622,6 +657,121 @@ test("returns a safe demo response without an AI binding", async () => {
   assert.equal(response.status, 200);
   assert.equal(data.demo, true);
   assert.match(data.response, /At your service/);
+});
+
+test("Auto Director routes maximum complex work through reasoning and critic models", async () => {
+  const calls = [];
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async run(model) {
+        calls.push(model);
+        if (calls.length === 1) return { response: "A carefully reasoned draft." };
+        return { response: "PASS\nThe draft meets the request." };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      modelKey: "auto",
+      reasoningPower: "max",
+      contextWindow: 120000,
+      messages: [{ role: "user", content: "Analyze this complex architecture and compare the safest strategies." }],
+    }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.modelKey, "reasoning");
+  assert.equal(calls[0], "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
+  assert.equal(calls[1], "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
+  assert.equal(data.reflection.used, true);
+});
+
+test("runs multi-query Deep Research and returns a cited synthesis", async () => {
+  const originalFetch = globalThis.fetch;
+  let searches = 0;
+  globalThis.fetch = async () => {
+    searches += 1;
+    return Response.json({ results: Array.from({ length: 6 }, (_, index) => ({
+      title: `Source ${searches}-${index}`,
+      url: `https://source${searches}-${index}.example/report`,
+      content: `Independent evidence ${searches}-${index}`,
+    })) });
+  };
+  const env = {
+    ...AUTH_ENV,
+    SEARXNG_URL: "https://search.example",
+    AI: { async run() { return { response: "Synthesis with [evidence](https://source1-0.example/report)." }; } },
+  };
+  try {
+    const request = await authorizedRequest("https://jarvis.test/api/deep-research", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: "Windows security baseline", reasoningPower: "max" }),
+    });
+    const response = await worker.fetch(request, env);
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(searches, 4);
+    assert.equal(data.queries.length, 4);
+    assert.equal(data.sources.length, 18);
+    assert.match(data.response, /Synthesis/);
+    assert.deepEqual(data.toolsUsed, ["deep_research", "multi_query_search"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("converts Office and PDF attachments to bounded Markdown", async () => {
+  let convertedName = "";
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async toMarkdown(input) {
+        convertedName = input.name;
+        return { format: "markdown", data: "# Converted report\n\nSafe document text", tokens: 8, mimetype: "application/pdf" };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/document", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "report.pdf", file: "data:application/pdf;base64,JVBERg==" }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(convertedName, "report.pdf");
+  assert.match(data.markdown, /Converted report/);
+  assert.equal(data.tokens, 8);
+});
+
+test("transcribes supported audio with Cloudflare Whisper", async () => {
+  let selectedModel = "";
+  const env = {
+    ...AUTH_ENV,
+    AI: {
+      async run(model, input) {
+        selectedModel = model;
+        assert.equal(input.task, "transcribe");
+        assert.equal(input.vad_filter, true);
+        return { text: "JARVIS audio transcript" };
+      },
+    },
+  };
+  const request = await authorizedRequest("https://jarvis.test/api/transcribe", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ audio: "data:audio/wav;base64,UklGRg==" }),
+  });
+  const response = await worker.fetch(request, env);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(selectedModel, "@cf/openai/whisper-large-v3-turbo");
+  assert.equal(data.transcript, "JARVIS audio transcript");
 });
 
 test("creates a safe fallback Mission Control plan without an AI binding", async () => {
@@ -996,5 +1146,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.12.9", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.13.3", ai: false });
 });

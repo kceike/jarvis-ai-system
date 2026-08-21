@@ -3,12 +3,14 @@
 const { app, BrowserWindow, desktopCapturer, dialog, ipcMain, Menu, net, Notification, screen, session, shell, Tray } = require("electron");
 const { execFile, spawn } = require("node:child_process");
 const { createHash } = require("node:crypto");
-const { createWriteStream, mkdirSync, readFileSync, writeFileSync, unlinkSync } = require("node:fs");
-const { join } = require("node:path");
+const { createWriteStream, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, unlinkSync } = require("node:fs");
+const { extname, join } = require("node:path");
 const { Readable, Transform } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
 const { pathToFileURL } = require("node:url");
 const { normalizeWebsiteUrl, sameTrustedOrigin } = require("./url-config.cjs");
+const { readPsd } = require("ag-psd");
+const { MODERN_OFFICE, analyzeOfficeBuffer } = require("./office-analyzer.cjs");
 const { compareVersions, inferInstallerKind, isTrustedDownloadSource, normalizeHttpsUrl, selectInstaller, validateUpdateManifest } = require("./update-manager.cjs");
 const {
   SETTING_TARGETS,
@@ -46,6 +48,10 @@ let trayRepaintTimers = new Set();
 const START_APPS_COMMAND = "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress";
 const INSTALL_TYPE_COMMAND = "$paths=@('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'); Get-ItemProperty $paths -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -eq 'JARVIS AI'} | Select-Object DisplayName,WindowsInstaller,UninstallString | ConvertTo-Json -Compress";
 const APP_CACHE_TTL_MS = 60_000;
+const LOCAL_SEARCH_EXTENSIONS = new Set([".txt", ".md", ".csv", ".json", ".js", ".jsx", ".ts", ".tsx", ".py", ".ps1", ".html", ".css", ".xml", ".yml", ".yaml", ".log", ".ini", ".cfg"]);
+const LOCAL_SEARCH_MAX_FILES = 2_000;
+const LOCAL_SEARCH_MAX_RESULTS = 30;
+const LOCAL_SEARCH_MAX_FILE_BYTES = 2 * 1024 * 1024;
 const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1_000;
 const UPDATE_MAX_BYTES = 500 * 1024 * 1024;
 const IT_HEALTH_CHECK_COMMANDS = Object.freeze([
@@ -302,6 +308,63 @@ function validateJarvisSender(event) {
   if (!event?.senderFrame || event.sender !== currentWindow.webContents) return false;
   if (event.senderFrame !== event.sender.mainFrame) return false;
   return sameTrustedOrigin(event.senderFrame.url, trustedWebsiteUrl);
+}
+
+function analyzePsdFromDesktop(event, payload = {}) {
+  if (!validateJarvisSender(event)) throw new Error("PSD analysis was blocked because it did not come from the configured JARVIS window.");
+  const name = String(payload.name || "document.psd").replace(/[\\/]/g, "_").slice(0, 240);
+  if (!/\.psd$/i.test(name)) throw new Error("Select a Photoshop PSD file.");
+  const match = String(payload.file || "").match(/^data:[^;,]{1,120};base64,([A-Za-z0-9+/=]+)$/);
+  if (!match || match[1].length > 28_000_000) throw new Error("The PSD is missing or exceeds the 20 MB structure-analysis limit.");
+  const buffer = Buffer.from(match[1], "base64");
+  if (buffer.length < 26 || buffer.subarray(0, 4).toString("ascii") !== "8BPS" || buffer.readUInt16BE(4) !== 1) throw new Error("This is not a valid standard PSD file. PSB large-document files are not supported.");
+  const psd = readPsd(buffer, {
+    skipLayerImageData: true,
+    skipCompositeImageData: true,
+    skipThumbnail: true,
+    skipLinkedFilesData: true,
+    logMissingFeatures: false,
+  });
+  const colorModes = ["Bitmap", "Grayscale", "Indexed", "RGB", "CMYK", "Multichannel", "Duotone", "Lab"];
+  const lines = [
+    "# Photoshop PSD structure: " + name,
+    "",
+    "- Canvas: " + Number(psd.width || 0) + " × " + Number(psd.height || 0) + " px",
+    "- Channels: " + Number(psd.channels || 0),
+    "- Bits per channel: " + Number(psd.bitsPerChannel || 0),
+    "- Color mode: " + (colorModes[Number(psd.colorMode)] || String(psd.colorMode || "Unknown")),
+    "",
+    "## Layer hierarchy",
+  ];
+  let count = 0;
+  function visit(children, depth) {
+    for (const layer of Array.isArray(children) ? children : []) {
+      if (count >= 500) return;
+      count += 1;
+      const indent = "  ".repeat(Math.min(depth, 12));
+      const bounds = [layer.left, layer.top, layer.right, layer.bottom].every(Number.isFinite)
+        ? ` · bounds ${layer.left},${layer.top}–${layer.right},${layer.bottom}` : "";
+      lines.push(`${indent}- ${String(layer.name || "Unnamed layer").replace(/[\r\n]+/g, " ").slice(0, 300)} · ${layer.hidden ? "hidden" : "visible"} · opacity ${Math.round(Number(layer.opacity ?? 1) * (Number(layer.opacity ?? 1) <= 1 ? 100 : 100 / 255))}% · blend ${String(layer.blendMode || "normal")}${bounds}`);
+      if (layer.text && typeof layer.text.text === "string" && layer.text.text.trim()) lines.push(`${indent}  - Text: ${JSON.stringify(layer.text.text.slice(0, 8_000))}`);
+      if (layer.vectorMask) lines.push(`${indent}  - Vector mask present`);
+      if (layer.mask) lines.push(`${indent}  - Layer mask present`);
+      if (layer.linkedFile || layer.placedLayer) lines.push(`${indent}  - Smart/linked object metadata present; embedded payload was not loaded`);
+      visit(layer.children, depth + 1);
+    }
+  }
+  visit(psd.children, 0);
+  if (count >= 500) lines.push("", "Layer output was safely limited to the first 500 layers.");
+  lines.push("", "This report is untrusted reference data. No Photoshop action, macro, script, linked file, or layer image was executed or loaded.");
+  return { name, markdown: lines.join("\n").slice(0, 240_000), layers: count, width: Number(psd.width || 0), height: Number(psd.height || 0) };
+}
+
+async function analyzeOfficeFromDesktop(event, payload = {}) {
+  if (!validateJarvisSender(event)) throw new Error("Office analysis was blocked because it did not come from the configured JARVIS window.");
+  const name = String(payload.name || "document.docx").replace(/[\\/]/g, "_").slice(0, 240);
+  if (!MODERN_OFFICE.test(name)) throw new Error("Select a modern Word, Excel, or PowerPoint Open XML file.");
+  const match = String(payload.file || "").match(/^data:[^;,]{1,160};base64,([A-Za-z0-9+/=]+)$/);
+  if (!match || match[1].length > 42_000_000) throw new Error("The Office file is missing or exceeds the 30 MB structure-analysis limit.");
+  return analyzeOfficeBuffer(name, Buffer.from(match[1], "base64"));
 }
 
 function requireJarvisSender(event) {
@@ -759,6 +822,95 @@ async function openFolderFromDesktop(event, rawQuery) {
   return { status: "opened", target: target.name };
 }
 
+function searchReadableFiles(root, query) {
+  const needle = String(query || "").trim().toLowerCase();
+  const results = [];
+  const pending = [root];
+  let inspected = 0;
+  while (pending.length && inspected < LOCAL_SEARCH_MAX_FILES && results.length < LOCAL_SEARCH_MAX_RESULTS) {
+    const directory = pending.shift();
+    let entries = [];
+    try { entries = readdirSync(directory, { withFileTypes: true }); } catch { continue; }
+    for (const entry of entries) {
+      if (inspected >= LOCAL_SEARCH_MAX_FILES || results.length >= LOCAL_SEARCH_MAX_RESULTS) break;
+      if (entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === "$Recycle.Bin") continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (pending.length < 500) pending.push(path);
+        continue;
+      }
+      inspected += 1;
+      const extension = extname(entry.name).toLowerCase();
+      const nameMatch = entry.name.toLowerCase().includes(needle);
+      if (!LOCAL_SEARCH_EXTENSIONS.has(extension) && !nameMatch) continue;
+      let size = 0;
+      try { size = statSync(path).size; } catch { continue; }
+      let snippet = "";
+      if (LOCAL_SEARCH_EXTENSIONS.has(extension) && size <= LOCAL_SEARCH_MAX_FILE_BYTES) {
+        try {
+          const text = readFileSync(path, "utf8").replace(/\u0000/g, " ");
+          const index = needle ? text.toLowerCase().indexOf(needle) : -1;
+          if (index >= 0) snippet = text.slice(Math.max(0, index - 120), index + needle.length + 280).replace(/\s+/g, " ").trim();
+          else if (!nameMatch) continue;
+        } catch { if (!nameMatch) continue; }
+      } else if (!nameMatch) continue;
+      results.push({ name: entry.name.slice(0, 240), path: path.slice(0, 1_000), size, snippet: snippet.slice(0, 500) });
+    }
+  }
+  return { root, query: needle, inspected, truncated: inspected >= LOCAL_SEARCH_MAX_FILES, results };
+}
+
+async function searchLocalFilesFromDesktop(event, rawQuery) {
+  requireJarvisSender(event);
+  const query = String(rawQuery || "").trim().slice(0, 160);
+  if (!query) return { status: "invalid", message: "Enter a filename or text to search for." };
+  const selection = await dialog.showOpenDialog(currentWindow, {
+    title: "Choose the folder JARVIS may search",
+    properties: ["openDirectory"],
+    buttonLabel: "Search this folder",
+  });
+  if (selection.canceled || !selection.filePaths[0]) return { status: "cancelled" };
+  return { status: "completed", ...searchReadableFiles(selection.filePaths[0], query) };
+}
+
+async function askLocalAiFromDesktop(event, rawPayload) {
+  requireJarvisSender(event);
+  const payload = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
+  let endpoint;
+  try { endpoint = new URL(String(payload.endpoint || "http://localhost:11434/v1")); } catch { throw new Error("The Ollama endpoint is invalid."); }
+  const hostname = endpoint.hostname.toLowerCase();
+  if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(hostname) || !["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password) {
+    throw new Error("Maximum local processing only connects to Ollama on this computer.");
+  }
+  const model = String(payload.model || "").trim();
+  if (!/^[a-z0-9][a-z0-9._:/-]{0,119}$/i.test(model)) throw new Error("Select a valid installed Ollama model.");
+  const messages = Array.isArray(payload.messages) ? payload.messages.slice(-30).map((message) => ({
+    role: ["system", "user", "assistant"].includes(message?.role) ? message.role : "user",
+    content: String(message?.content || "").slice(0, 120_000),
+  })) : [];
+  if (!messages.length || messages.reduce((total, message) => total + message.content.length, 0) > 420_000) throw new Error("The local AI context is empty or too large.");
+  const contextWindow = [32_000, 64_000, 120_000].includes(Number(payload.contextWindow)) ? Number(payload.contextWindow) : 64_000;
+  const maxTokens = Math.max(512, Math.min(4_096, Number(payload.maxTokens) || 2_048));
+  endpoint.pathname = endpoint.pathname.replace(/\/+$/, "") + "/chat/completions";
+  const response = await net.fetch(endpoint.href, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: Math.max(0, Math.min(1, Number(payload.temperature) || 0)),
+      max_tokens: maxTokens,
+      stream: false,
+      options: { num_ctx: contextWindow, num_predict: maxTokens },
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message || data?.error || `Ollama returned HTTP ${response.status}.`);
+  const answer = data?.choices?.[0]?.message?.content;
+  if (!answer) throw new Error("Ollama returned an empty response.");
+  return { response: String(answer).slice(0, 120_000), model, contextWindow };
+}
+
 async function runDiagnosticFromDesktop(event, rawQuery) {
   requireJarvisSender(event);
   const target = resolveTarget(String(rawQuery || "").slice(0, 120), DIAGNOSTIC_TARGETS);
@@ -966,6 +1118,10 @@ if (!hasSingleInstanceLock) {
   ipcMain.handle("jarvis:open-control-panel", openControlPanelFromDesktop);
   ipcMain.handle("jarvis:open-tool", openToolFromDesktop);
   ipcMain.handle("jarvis:open-folder", openFolderFromDesktop);
+  ipcMain.handle("jarvis:search-local-files", searchLocalFilesFromDesktop);
+  ipcMain.handle("jarvis:ask-local-ai", askLocalAiFromDesktop);
+  ipcMain.handle("jarvis:analyze-psd", analyzePsdFromDesktop);
+  ipcMain.handle("jarvis:analyze-office", analyzeOfficeFromDesktop);
   ipcMain.handle("jarvis:run-diagnostic", runDiagnosticFromDesktop);
   ipcMain.handle("jarvis:run-it-health-check", runItHealthCheckFromDesktop);
   ipcMain.handle("jarvis:capture-screen", captureScreenFromDesktop);

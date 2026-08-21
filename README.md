@@ -125,8 +125,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.12.9-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.12.9-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.13.3-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.13.3-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -134,7 +134,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.12.9 expands the searchable and downloadable **Help Center** with the complete Knowledge Update Agent setup, workflow, approval rules, and troubleshooting guide. It explains required Cloudflare AI, SearXNG, Docker, and Tailscale Funnel services; two-domain source verification; Generator JSON Schema correction; independent Critic review; and exactly what can enter Memory Vault. The v1.12.8 structured-output reliability upgrade remains active: malformed Generator or Critic output receives one controlled correction retry before a friendly error. Findings remain an unsaved draft until you select claims and press **Approve Selected**. Rejected, unselected, single-source, or critic-rejected findings never enter Memory Vault. The v1.12.7 natural-weather correction, system-tray, repaint, Always Listen, and Settings scrolling fixes remain included.
+Version 1.13.3 adds dedicated Microsoft Office learning to the genuine EXE/MSI. Modern Word, Excel, and PowerPoint Open XML packages up to 30 MB are parsed locally. Excel extraction includes worksheet cells, formulas, cached results, shared strings, and named ranges; Word includes body content, headers, footers, comments, and notes; PowerPoint includes slides and speaker notes. Macro-enabled documents are detected, but VBA and embedded programs are never executed. `/learnfiles` still requires approval before RAG storage.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.

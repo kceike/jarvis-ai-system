@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.12.9
+JARVIS AI - WINDOWS INSTALLER 1.13.3
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,14 +9,13 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.12.9 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.13.3 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.12.9 keeps every previous JARVIS function and expands the searchable,
-downloadable Help Center with the full Knowledge Update Agent setup, workflow,
-approval rules, and troubleshooting guide. The structured JSON Schema output,
-safe self-correction retry, two-domain verification, Generator and Critic checks,
-and explicit approval requirement remain enforced.
+Version 1.13.3 keeps the free JARVIS functions and adds Microsoft Office learning,
+Maximum reasoning, larger context, Deep Research, document/audio analysis,
+neural speech, optional video generation, safe local-file search, and adaptive
+maximum Ollama configuration. All Knowledge Agent approval rules remain enforced.
 It keeps the visible confirmation after an automatic update. Install v1.10.0 or later once, then configure the release channel with
 CONFIGURE_WINDOWS_AUTO_UPDATE.bat. Future verified native releases download in
 the background and install when JARVIS closes.
