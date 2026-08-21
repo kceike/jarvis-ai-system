@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.13\.4/);
+  assert.match(html, /BUILD 1\.13\.5/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.13.4");
+  assert.equal((await health.json()).build, "1.13.5");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.13.4");
+  assert.equal(manifest.websiteBuild, "1.13.5");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -151,6 +151,10 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /rel="icon"/);
   assert.match(html, /IMPORT CHATGPT EXPORT/);
   assert.match(html, /Local Ollama/);
+  assert.match(html, /Google Gemini API/);
+  assert.match(html, /value="gemini"/);
+  assert.match(html, /CONFIGURE_GEMINI_API\.bat/);
+  assert.match(html, /provider:state\.settings\.provider/);
   assert.match(html, /Web research/);
   assert.match(html, /id="weatherLocation"/);
   assert.match(html, /\/weather/);
@@ -219,7 +223,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.13\.4\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.13\.5\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -294,7 +298,7 @@ test("documents the complete Knowledge Update Agent workflow in the Help Center"
   assert.match(html, /CONFIGURE_KNOWLEDGE_AGENT\.bat/);
   assert.match(html, /Web research versus knowledge learning/);
   assert.match(html, /Rejected or unselected findings are never saved/);
-  assert.match(html, /Version 1\.13\.4/);
+  assert.match(html, /Version 1\.13\.5/);
 });
 
 test("includes installable website and Windows desktop-app script assets", async () => {
@@ -304,6 +308,7 @@ test("includes installable website and Windows desktop-app script assets", async
   const powershellInstaller = await readFile(new URL("../windows-app/Install-Jarvis.ps1", import.meta.url), "utf8");
   const uninstaller = await readFile(new URL("../UNINSTALL_JARVIS_WINDOWS_APP.bat", import.meta.url), "utf8");
   const knowledgeSetup = await readFile(new URL("../CONFIGURE_KNOWLEDGE_AGENT.bat", import.meta.url), "utf8");
+  const geminiSetup = await readFile(new URL("../CONFIGURE_GEMINI_API.bat", import.meta.url), "utf8");
   const powershellUninstaller = await readFile(new URL("../windows-app/Uninstall-Jarvis.ps1", import.meta.url), "utf8");
   const wrangler = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
 
@@ -314,7 +319,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.13\.4"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.13\.5"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -323,6 +328,10 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(knowledgeSetup, /wrangler secret put SEARXNG_URL/);
   assert.match(knowledgeSetup, /Scheme -ne 'https'/);
   assert.match(knowledgeSetup, /wrangler deploy/);
+  assert.match(geminiSetup, /wrangler secret put GEMINI_API_KEY/);
+  assert.match(geminiSetup, /wrangler secret put GEMINI_MODEL/);
+  assert.match(geminiSetup, /wrangler deploy/);
+  assert.doesNotMatch(geminiSetup, /AIza[0-9A-Za-z_-]{20,}/);
   assert.equal(wrangler.assets.directory, "./assets");
   assert.equal(wrangler.vars.SEARXNG_URL, undefined);
 });
@@ -341,7 +350,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.13.4");
+  assert.equal(desktopPackage.version, "1.13.5");
   assert.equal(desktopPackage.dependencies["ag-psd"], "31.0.2");
   assert.equal(desktopPackage.dependencies.jszip, "3.10.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
@@ -660,6 +669,67 @@ test("returns a safe demo response without an AI binding", async () => {
   assert.equal(response.status, 200);
   assert.equal(data.demo, true);
   assert.match(data.response, /At your service/);
+});
+
+test("routes maximum multimodal work through the secure Gemini API and critic", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push({ url: String(url), init, body });
+    return Response.json({
+      candidates: [{ content: { parts: [{ text: calls.length === 1 ? "Gemini maximum reply." : "PASS\nThe answer meets the request." }] } }],
+      usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 },
+    });
+  };
+  try {
+    const request = await authorizedRequest("https://jarvis.test/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        provider: "gemini",
+        mode: "code",
+        reasoningPower: "max",
+        contextWindow: 120000,
+        reflectionMode: true,
+        semanticMemory: false,
+        image: "data:image/png;base64,iVBORw0KGgo=",
+        messages: [{ role: "user", content: "Analyze this interface and produce accessible HTML." }],
+      }),
+    });
+    const response = await worker.fetch(request, { ...AUTH_ENV, GEMINI_API_KEY: "test-gemini-key", GEMINI_MODEL: "gemini-test" });
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.response, "Gemini maximum reply.");
+    assert.equal(data.modelKey, "gemini:gemini-test");
+    assert.deepEqual(data.toolsUsed, ["gemini", "vision", "reflection"]);
+    assert.equal(data.reflection.used, true);
+    assert.equal(calls.length, 2);
+    assert.match(calls[0].url, /generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-test:generateContent$/);
+    assert.equal(calls[0].init.headers["x-goog-api-key"], "test-gemini-key");
+    assert.equal(calls[0].body.generationConfig.maxOutputTokens, 8192);
+    assert.equal(calls[0].body.contents[0].parts[1].inline_data.mime_type, "image/png");
+    assert.equal(calls[0].body.contents[0].parts[1].inline_data.data, "iVBORw0KGgo=");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("does not expose or accept Gemini chat without the Worker secret", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      provider: "gemini",
+      semanticMemory: false,
+      messages: [{ role: "user", content: "Hello Gemini" }],
+    }),
+  });
+  const response = await worker.fetch(request, AUTH_ENV);
+  const data = await response.json();
+  assert.equal(response.status, 503);
+  assert.match(data.error, /GEMINI_API_KEY is not configured/);
+  assert.doesNotMatch(JSON.stringify(data), /test-gemini-key/);
 });
 
 test("Auto Director routes maximum complex work through reasoning and critic models", async () => {
@@ -1049,6 +1119,50 @@ test("Knowledge Update Agent cross-checks two domains and returns only critic-ap
   }
 });
 
+test("Knowledge Update Agent can use Gemini structured Generator and Critic output", async () => {
+  const originalFetch = globalThis.fetch;
+  const geminiCalls = [];
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    if (url.hostname === "search.example.com") {
+      return Response.json({ results: [
+        { title: "Official platform guidance", url: "https://official.example.com/platform", content: "Platform updates should be tested before production rollout." },
+        { title: "Independent operations standard", url: "https://standard.example.org/operations", content: "Production platform updates should be tested before broad rollout." },
+      ] });
+    }
+    assert.equal(url.hostname, "generativelanguage.googleapis.com");
+    const payload = JSON.parse(init.body);
+    geminiCalls.push(payload);
+    const response = geminiCalls.length === 1
+      ? { summary: "One verified proposal.", proposals: [{ fact: "Platform updates should be tested before broad production rollout.", confidence: "high", sourceIndexes: [1, 2], reason: "Two independent sources recommend pre-production testing." }] }
+      : { approvedIndexes: [0], summary: "The proposal is supported by two domains." };
+    return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify(response) }] } }] });
+  };
+  try {
+    const request = await authorizedRequest("https://jarvis.test/api/knowledge-update", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ topic: "Platform update testing", provider: "gemini" }),
+    });
+    const response = await worker.fetch(request, {
+      ...AUTH_ENV,
+      SEARXNG_URL: "https://search.example.com",
+      GEMINI_API_KEY: "test-gemini-key",
+      GEMINI_MODEL: "gemini-test",
+    });
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(data.proposals.length, 1);
+    assert.equal(geminiCalls.length, 2);
+    assert.equal(geminiCalls[0].generationConfig.responseMimeType, "application/json");
+    assert.equal(geminiCalls[0].generationConfig.responseJsonSchema.type, "object");
+    assert.match(geminiCalls[0].system_instruction.parts[0].text, /untrusted evidence/);
+    assert.match(geminiCalls[1].system_instruction.parts[0].text, /untrusted data/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("Knowledge Update Agent self-corrects one malformed generator response", async () => {
   const originalFetch = globalThis.fetch;
   const aiCalls = [];
@@ -1149,5 +1263,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.13.4", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.13.5", ai: false });
 });

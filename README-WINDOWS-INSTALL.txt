@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.13.4
+JARVIS AI - WINDOWS INSTALLER 1.13.5
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,10 +9,10 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.13.4 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.13.5 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.13.4 keeps every free function and adds universal natural intent routing,
+Version 1.13.5 keeps every free function and adds universal natural intent routing,
 Maximum reasoning, larger context, Deep Research, document/audio analysis,
 neural speech, optional video generation, safe local-file search, and adaptive
 maximum Ollama configuration. All Knowledge Agent approval rules remain enforced.
