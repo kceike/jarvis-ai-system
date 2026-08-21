@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.13\.6/);
+  assert.match(html, /BUILD 1\.13\.7/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.13.6");
+  assert.equal((await health.json()).build, "1.13.7");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.13.6");
+  assert.equal(manifest.websiteBuild, "1.13.7");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -223,7 +223,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.13\.6\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.13\.7\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -304,7 +304,7 @@ test("documents the complete Knowledge Update Agent workflow in the Help Center"
   assert.match(html, /CONFIGURE_KNOWLEDGE_AGENT\.bat/);
   assert.match(html, /Web research versus knowledge learning/);
   assert.match(html, /Rejected or unselected findings are never saved/);
-  assert.match(html, /Version 1\.13\.6/);
+  assert.match(html, /Version 1\.13\.7/);
 });
 
 test("includes installable website and Windows desktop-app script assets", async () => {
@@ -325,7 +325,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.13\.6"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.13\.7"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -356,7 +356,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.13.6");
+  assert.equal(desktopPackage.version, "1.13.7");
   assert.equal(desktopPackage.dependencies["ag-psd"], "31.0.2");
   assert.equal(desktopPackage.dependencies.jszip, "3.10.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
@@ -683,8 +683,14 @@ test("routes maximum multimodal work through the secure Gemini API and critic", 
   globalThis.fetch = async (url, init) => {
     const body = JSON.parse(init.body);
     calls.push({ url: String(url), init, body });
+    if (String(url).endsWith("/v1beta/interactions")) {
+      return Response.json({
+        status: "completed",
+        steps: [{ type: "model_output", content: [{ type: "text", text: "PASS\nThe answer meets the request." }] }],
+      });
+    }
     return Response.json({
-      candidates: [{ content: { parts: [{ text: calls.length === 1 ? "Gemini maximum reply." : "PASS\nThe answer meets the request." }] } }],
+      candidates: [{ content: { parts: [{ text: "Gemini maximum reply." }] } }],
       usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 },
     });
   };
@@ -739,12 +745,60 @@ test("does not expose or accept Gemini chat without the Worker secret", async ()
   assert.doesNotMatch(JSON.stringify(data), /test-gemini-key/);
 });
 
+test("routes Gemini text and code through the current Interactions API", async () => {
+  const originalFetch = globalThis.fetch;
+  let interactionCall;
+  globalThis.fetch = async (url, init) => {
+    interactionCall = { url: String(url), init, body: JSON.parse(init.body) };
+    return Response.json({
+      status: "completed",
+      steps: [
+        { type: "thought", summary: [] },
+        { type: "model_output", content: [{ type: "text", text: "```html\n<form>JARVIS</form>\n```" }] },
+      ],
+      usage: { total_input_tokens: 20, total_output_tokens: 12 },
+    });
+  };
+  try {
+    const request = await authorizedRequest("https://jarvis.test/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        provider: "gemini",
+        mode: "code",
+        reasoningPower: "standard",
+        contextWindow: 120000,
+        reflectionMode: false,
+        semanticMemory: false,
+        messages: [{ role: "user", content: "Create a complete HTML login page." }],
+      }),
+    });
+    const response = await worker.fetch(request, { ...AUTH_ENV, GEMINI_API_KEY: "test-gemini-key", GEMINI_MODEL: "gemini-test" });
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.match(data.response, /<form>JARVIS<\/form>/);
+    assert.equal(interactionCall.url, "https://generativelanguage.googleapis.com/v1beta/interactions");
+    assert.equal(interactionCall.body.model, "gemini-test");
+    assert.equal(interactionCall.body.store, false);
+    assert.equal(interactionCall.body.generation_config.thinking_level, "low");
+    assert.equal(interactionCall.body.generation_config.max_output_tokens, 5120);
+    assert.match(interactionCall.body.system_instruction, /expert coding copilot/);
+    assert.match(interactionCall.body.input, /USER:\nCreate a complete HTML login page/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("tests the configured Gemini connection without exposing its key", async () => {
   const originalFetch = globalThis.fetch;
-  let requestBody;
-  globalThis.fetch = async (_url, init) => {
-    requestBody = JSON.parse(init.body);
-    return Response.json({ candidates: [{ content: { parts: [{ text: "GEMINI ONLINE" }] } }] });
+  let liveRequest;
+  globalThis.fetch = async (url, init) => {
+    liveRequest = { url: String(url), init, body: JSON.parse(init.body) };
+    return Response.json({
+      status: "completed",
+      steps: [{ type: "model_output", content: [{ type: "text", text: "JARVIS ONLINE" }] }],
+      usage: { total_input_tokens: 7, total_output_tokens: 3 },
+    });
   };
   try {
     const request = await authorizedRequest("https://jarvis.test/api/gemini-test", {
@@ -757,8 +811,16 @@ test("tests the configured Gemini connection without exposing its key", async ()
     assert.equal(response.status, 200);
     assert.equal(data.status, "online");
     assert.equal(data.model, "gemini-test");
+    assert.equal(data.displayName, "gemini-test");
+    assert.equal(data.liveResponse, true);
     assert.equal(typeof data.latencyMs, "number");
-    assert.match(requestBody.systemInstruction.parts[0].text, /connection diagnostic/);
+    assert.equal(liveRequest.url, "https://generativelanguage.googleapis.com/v1beta/interactions");
+    assert.equal(liveRequest.init.method, "POST");
+    assert.equal(liveRequest.init.headers["x-goog-api-key"], "test-gemini-key");
+    assert.equal(liveRequest.body.model, "gemini-test");
+    assert.equal(liveRequest.body.store, false);
+    assert.equal(liveRequest.body.generation_config.thinking_level, "minimal");
+    assert.equal(liveRequest.body.generation_config.max_output_tokens, 32);
     assert.doesNotMatch(JSON.stringify(data), /test-gemini-key/);
   } finally {
     globalThis.fetch = originalFetch;
@@ -1329,5 +1391,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.13.6", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.13.7", ai: false });
 });

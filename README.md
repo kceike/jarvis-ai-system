@@ -126,8 +126,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.13.6-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.13.6-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.13.7-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.13.7-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -135,7 +135,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.13.6 adds the Unified JARVIS Brain and a one-click maximum profile. Unified mode prefers the strongest configured route, uses Gemini when its secret is available, and safely falls back to Cloudflare AI after a transient Gemini failure. Gemini requests now use bounded timeouts, controlled retry, canonical request fields, a connection-test button, and visible progress stages. Every normal answer remains in chat and is spoken automatically while Automatic voice response is enabled. Natural requests are classified as conversation, coding, or image creation regardless of the Cloudflare model override. Slash commands remain optional fallbacks; all confirmations and permission boundaries remain enforced.
+Version 1.13.7 adds the Unified JARVIS Brain and a one-click maximum profile. Unified mode prefers the strongest configured route, uses Gemini when its secret is available, and safely falls back to Cloudflare AI after a transient Gemini failure. Gemini text and code now use the current Interactions API with bounded timeouts and controlled retry. The connection-test button sends a tiny live response request through that same path, and an interrupted request is restored as a visible chat error instead of silently leaving only the user message. Every normal answer remains in chat and is spoken automatically while Automatic voice response is enabled. Natural requests are classified as conversation, coding, or image creation regardless of the Cloudflare model override. Slash commands remain optional fallbacks; all confirmations and permission boundaries remain enforced.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.

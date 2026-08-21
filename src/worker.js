@@ -297,7 +297,8 @@ const HTML = String.raw`<!doctype html>
       function makeChat(mode){var n=Date.now();return{id:id("chat"),title:"New transmission",mode:mode||"chat",messages:[],createdAt:n,updatedAt:n}}
       function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
       function current(){return state.conversations.find(function(c){return c.id===state.active})||state.conversations[0]}
-      function load(){try{var savedSettings=localStorage.getItem(SET);state.conversations=JSON.parse(localStorage.getItem(STORE)||"[]");state.settings=Object.assign(state.settings,JSON.parse(savedSettings||"{}"));state.syncMeta=Object.assign(state.syncMeta,JSON.parse(localStorage.getItem(SYNC_META)||"{}"));if(!state.syncMeta.settingsUpdatedAt&&savedSettings)state.syncMeta.settingsUpdatedAt=Date.now()}catch(e){}if(!state.syncMeta.deviceId)state.syncMeta.deviceId="device-"+Date.now()+"-"+Math.random().toString(36).slice(2,12);if(!state.conversations.length)state.conversations=[makeChat("chat")];state.active=state.conversations[0].id;applySettings();render();saveLocalOnly();setTimeout(function(){syncNow(false,false)},900);setTimeout(maybeProactiveBriefing,1700)}
+      function recoverInterruptedReplies(){var changed=false;state.conversations.forEach(function(c){var messages=Array.isArray(c.messages)?c.messages:[],last=messages[messages.length-1];if(last&&last.role==="user"&&Date.now()-Number(last.createdAt||0)>8000){messages.push({id:id("msg"),role:"assistant",content:"The previous AI request was interrupted before a response reached this chat. Please send it again; JARVIS will now show a visible error instead of leaving the conversation unanswered.",createdAt:Date.now()});c.updatedAt=Date.now();changed=true}});return changed}
+      function load(){try{var savedSettings=localStorage.getItem(SET);state.conversations=JSON.parse(localStorage.getItem(STORE)||"[]");state.settings=Object.assign(state.settings,JSON.parse(savedSettings||"{}"));state.syncMeta=Object.assign(state.syncMeta,JSON.parse(localStorage.getItem(SYNC_META)||"{}"));if(!state.syncMeta.settingsUpdatedAt&&savedSettings)state.syncMeta.settingsUpdatedAt=Date.now()}catch(e){}if(!state.syncMeta.deviceId)state.syncMeta.deviceId="device-"+Date.now()+"-"+Math.random().toString(36).slice(2,12);if(!state.conversations.length)state.conversations=[makeChat("chat")];recoverInterruptedReplies();state.active=state.conversations[0].id;applySettings();render();saveLocalOnly();setTimeout(function(){syncNow(false,false)},900);setTimeout(maybeProactiveBriefing,1700)}
       function saveLocalOnly(){try{localStorage.setItem(STORE,JSON.stringify(state.conversations));localStorage.setItem(SET,JSON.stringify(state.settings));localStorage.setItem(SYNC_META,JSON.stringify(state.syncMeta))}catch(e){toast("Device memory is full. Export or clear older image chats.")}}
       function save(){saveLocalOnly();scheduleSync()}
       var memoryDbPromise=null;
@@ -346,7 +347,7 @@ const HTML = String.raw`<!doctype html>
       async function createMissionPlan(goal,displayPrompt){goal=String(goal||"").trim();if(!goal){toast("Describe the mission goal first.");return}if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in the Skills Dashboard.");return}var c=current(),prompt=displayPrompt||"Create a mission plan: "+goal,now=Date.now();closeMissionControl();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:prompt,createdAt:now});if(c.messages.length===1)c.title=goal.replace(/\s+/g," ").slice(0,48);c.updatedAt=now;state.sending=true;save();render();try{var data=await postJson("/api/mission-plan",{goal:goal,userTitle:state.settings.title,memory:await memorySearch(goal)}),mission=cleanMission(data.mission);if(!mission||!mission.steps.length)throw new Error("Mission Control returned no usable steps.");c.messages.push({id:id("msg"),role:"assistant",content:"**MISSION PLAN READY**\n"+(mission.summary||"Review each step below. JARVIS will not execute a computer action without your approval."),mission:mission,createdAt:Date.now()});c.updatedAt=Date.now();if(state.settings.autoSpeak)speak("Mission plan ready, "+(state.settings.title||"sir")+". Review the steps before execution.")}catch(error){c.messages.push({id:id("msg"),role:"assistant",content:"Mission Control could not create the plan. "+error.message,createdAt:Date.now()})}finally{state.sending=false;save();render()}}
       function openMissionControl(){if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in Settings.");return}q("#missionModal").classList.add("open");renderMissionDashboard();requestAnimationFrame(function(){q("#missionGoal").focus()})}
       function closeMissionControl(){q("#missionModal").classList.remove("open")}
-      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.13.6","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
+      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.13.7","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
       function renderHelpCenter(search){var term=String(search||"").trim().toLowerCase(),sections=HELP_SECTIONS.map(function(section){var items=section.items.filter(function(item){return!term||(section.title+" "+item.name+" "+item.description+" "+(item.example||"")).toLowerCase().includes(term)});return{title:section.title,items:items}}).filter(function(section){return section.items.length});q("#helpContent").innerHTML=sections.length?sections.map(function(section){return'<section class="help-section"><h3>'+esc(section.title)+'</h3><div class="help-items">'+section.items.map(function(item){return'<article class="help-item"><h4>'+esc(item.name)+'</h4><p>'+esc(item.description)+'</p>'+(item.example?'<code>'+esc(item.example)+'</code><button class="help-run" data-help-command="'+esc(item.example)+'">LOAD EXAMPLE</button>':"")+'</article>'}).join("")+'</div></section>'}).join(""):'<div class="help-empty">No command, function, or tutorial matched that search.</div>';qa("[data-help-command]").forEach(function(button){button.onclick=function(){q("#input").value=button.dataset.helpCommand;inputChanged();closeHelpCenter();q("#input").focus();toast("Example loaded. Review it, then press Send when ready.")}})}
       function openHelpCenter(){closeMissionControl();closeSettings();q("#helpSearch").value="";renderHelpCenter("");q("#helpScroll").scrollTop=0;q("#helpModal").classList.add("open");requestAnimationFrame(function(){q("#helpSearch").focus()})}
       function closeHelpCenter(){q("#helpModal").classList.remove("open")}
@@ -358,7 +359,7 @@ const HTML = String.raw`<!doctype html>
       async function approveKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft||!Array.isArray(draft.proposals))return;var selected=Array.from(qa(".knowledge-choice:checked")).map(function(input){return Number(input.dataset.index)}).filter(function(index){return Number.isInteger(index)&&draft.proposals[index]});if(!selected.length){toast("Select at least one verified proposal to approve.");return}var now=Date.now(),approved=selected.map(function(index){var proposal=draft.proposals[index],sources=Array.isArray(proposal.sources)?proposal.sources:[],sourceLines=sources.map(function(source){return"- "+String(source.title||"Source").slice(0,300)+" — "+String(source.url||"").slice(0,2000)}).join("\n");return{id:id("memory"),text:("User-approved web knowledge.\nTopic: "+draft.topic+"\nFact: "+proposal.fact+"\nConfidence: "+String(proposal.confidence||"medium").toUpperCase()+"\nVerification: "+(proposal.reason||"Passed generator and critic review.")+"\nApproved: "+new Date(now).toISOString()+"\nSources:\n"+sourceLines).slice(0,8000),source:"knowledge",role:"assistant",title:("Knowledge: "+draft.topic).slice(0,200),createdAt:now+index}});q("#approveKnowledge").disabled=true;try{await memoryPutMany(approved);await updateMemoryCount();appendKnowledgeResult(draft,"**KNOWLEDGE UPDATE APPROVED**\n"+approved.length+" verified fact"+(approved.length===1?" was":"s were")+" added to the synchronized Memory Vault. Unselected proposals were discarded.");state.knowledgeDraft=null;closeKnowledgeAgent();toast(approved.length+" approved knowledge entr"+(approved.length===1?"y":"ies")+" saved and queued for synchronization.")}catch(error){q("#approveKnowledge").disabled=false;toast("Knowledge approval failed: "+error.message)}}
       function rejectKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft)return;appendKnowledgeResult(draft,"**KNOWLEDGE DRAFT REJECTED**\nNo internet finding from this draft was saved to the Memory Vault.");state.knowledgeDraft=null;closeKnowledgeAgent();toast("Knowledge draft rejected. Nothing was learned.")}
       async function copyHelpGuide(){var guide=helpGuideMarkdown();try{await navigator.clipboard.writeText(guide);toast("Complete JARVIS guide copied.")}catch(error){toast("Copy was blocked. Use Save Guide instead.")}}
-      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.13.6.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
+      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.13.7.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
       function chatDistance(){var stream=q("#stream");return stream?Math.max(0,stream.scrollHeight-stream.scrollTop-stream.clientHeight):0}
       function updateJumpButton(newResponse){var button=q("#jumpLatest");if(!button)return;button.textContent=newResponse?"↓ NEW JARVIS RESPONSE":"↓ LATEST RESPONSE";button.classList.toggle("show",!chatStickToBottom&&chatDistance()>90)}
       function scrollChat(behavior){var stream=q("#stream");if(!stream||stream.hidden)return;chatStickToBottom=true;chatAutoScrolling=true;updateJumpButton(false);requestAnimationFrame(function(){stream.scrollTo({top:stream.scrollHeight,left:0,behavior:behavior||"auto"});setTimeout(function(){if(chatAutoScrolling){stream.scrollTop=stream.scrollHeight;chatStickToBottom=true;chatAutoScrolling=false;updateJumpButton(false)}},behavior==="smooth"?420:80)})}
@@ -412,7 +413,7 @@ const HTML = String.raw`<!doctype html>
       }
       async function postJson(endpoint,body,timeoutMs){var controller=new AbortController(),limit=Math.max(5000,Number(timeoutMs)||180000),timer=setTimeout(function(){controller.abort()},limit);try{var res=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:controller.signal}),data;try{data=await res.json()}catch(parseError){throw new Error("JARVIS returned an unreadable response. Check the deployment logs.")}if(!res.ok||data.error)throw new Error(data.error||"JARVIS is unavailable.");return data}catch(error){if(error&&error.name==="AbortError")throw new Error("The AI request exceeded "+Math.round(limit/1000)+" seconds. Test the provider connection in Settings and try again.");throw error}finally{clearTimeout(timer)}}
       function beginAiProgress(provider,mode){var timers=[],label=provider==="auto"?"UNIFIED BRAIN · SELECTING BEST AI":provider==="gemini"?"CONTACTING GOOGLE GEMINI":provider==="ollama"?"CONTACTING LOCAL OLLAMA":"CONTACTING CLOUDFLARE AI";state.aiStage=label;timers.push(setTimeout(function(){if(state.sending){state.aiStage=mode==="code"?"GENERATING CODE":"GENERATING RESPONSE";renderMessages()}},4500));timers.push(setTimeout(function(){if(state.sending){state.aiStage=state.settings.reflectionMode||state.settings.reasoningPower!=="standard"?"REVIEWING AND SELF-CORRECTING":"FINALIZING RESPONSE";renderMessages()}},18000));return function(){timers.forEach(clearTimeout);state.aiStage=""}}
-      async function testGeminiConnection(){var button=q("#testGemini"),status=q("#geminiStatus");button.disabled=true;status.textContent="Testing the deployed Gemini secret and model…";try{var data=await postJson("/api/gemini-test",{},25000);status.textContent="ONLINE · "+data.model+" · "+data.latencyMs+" ms";toast("Gemini connection is online.");if(state.settings.autoSpeak)speak("Gemini connection is online, "+(state.settings.title||"sir")+".")}catch(error){status.textContent="FAILED · "+error.message;toast("Gemini test failed: "+error.message);if(state.settings.autoSpeak)speak("The Gemini connection test failed. "+error.message)}finally{button.disabled=false}}
+      async function testGeminiConnection(){var button=q("#testGemini"),status=q("#geminiStatus");button.disabled=true;status.textContent="Sending a small live Gemini response request…";try{var data=await postJson("/api/gemini-test",{},30000);status.textContent="ONLINE · "+(data.displayName||data.model)+" · "+data.latencyMs+" ms";toast("Gemini live chat response is online.");if(state.settings.autoSpeak)speak("Gemini live chat response is online, "+(state.settings.title||"sir")+".")}catch(error){status.textContent="FAILED · "+error.message;toast("Gemini test failed: "+error.message);if(state.settings.autoSpeak)speak("The Gemini connection test failed. "+error.message)}finally{button.disabled=false}}
       var naturalOriginalPrompt="";
       function localReply(prompt,response,speech){var shown=naturalOriginalPrompt||prompt,c=current(),now=Date.now();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:shown,createdAt:now});c.messages.push({id:id("msg"),role:"assistant",content:response,createdAt:Date.now()});if(c.messages.length===2)c.title=shown.replace(/\s+/g," ").slice(0,48);c.updatedAt=Date.now();q("#input").value="";save();render();if(state.settings.autoSpeak)speak(typeof speech==="string"?speech:response)}
       function openExternal(url){var opened=null;try{opened=window.open(url,"_blank","noopener,noreferrer")}catch(e){}return opened}
@@ -626,7 +627,7 @@ const LOGIN_HTML = String.raw`<!doctype html>
       <button class="submit" id="submit" type="submit">ESTABLISH SECURE LINK</button>
       <div class="status" id="status" role="status" aria-live="polite">AWAITING CREDENTIALS</div>
     </form>
-    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.13.6</div>
+    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.13.7</div>
   </main>
   <script>
     (function(){
@@ -1256,6 +1257,86 @@ function geminiContents(messages, imageMime, imageData) {
   return contents;
 }
 
+function geminiInteractionText(data) {
+  if (typeof data.output_text === "string" && data.output_text.trim()) return data.output_text.trim();
+  const steps = Array.isArray(data.steps) ? data.steps : [];
+  return steps
+    .filter((step) => step && step.type === "model_output" && Array.isArray(step.content))
+    .flatMap((step) => step.content)
+    .map((part) => part && typeof part.text === "string" ? part.text : "")
+    .join("")
+    .trim();
+}
+
+async function geminiInteract(env, {
+  apiKey,
+  model,
+  system,
+  messages,
+  reasoningPower,
+  maxTokens,
+  timeoutMs,
+  maxAttempts,
+}) {
+  const transcript = (Array.isArray(messages) ? messages : [])
+    .map((message) => `${message.role === "assistant" ? "ASSISTANT" : "USER"}:\n${String(message.content || "")}`)
+    .join("\n\n") || "USER:\nPlease respond.";
+  const thinkingLevel = reasoningPower === "max" ? "high" : reasoningPower === "deep" ? "medium" : "low";
+  const requestBody = JSON.stringify({
+    model,
+    input: transcript,
+    system_instruction: String(system || "You are JARVIS."),
+    store: false,
+    generation_config: {
+      max_output_tokens: Math.max(256, Math.min(8_192, Number(maxTokens) || 4_096)),
+      thinking_level: thinkingLevel,
+      thinking_summaries: "none",
+    },
+  });
+  const attempts = Math.max(1, Math.min(2, Number(maxAttempts) || 1));
+  const limit = Math.max(5_000, Math.min(60_000, Number(timeoutMs) || 45_000));
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    let response;
+    let data = {};
+    try {
+      response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
+        body: requestBody,
+        signal: AbortSignal.timeout(limit),
+      });
+      try { data = await response.json(); } catch { data = {}; }
+    } catch (error) {
+      const timedOut = error && (error.name === "TimeoutError" || error.name === "AbortError");
+      lastError = new Error(timedOut
+        ? `Gemini interaction did not respond within ${Math.round(limit / 1_000)} seconds.`
+        : `Gemini network error: ${String(error && error.message || "connection failed").slice(0, 300)}`);
+      if (attempt + 1 < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+        continue;
+      }
+      throw lastError;
+    }
+    if (!response.ok || data.status === "failed") {
+      const reason = String(data && data.error && (data.error.message || data.error) || `HTTP ${response.status}`).replaceAll(apiKey, "[redacted]").slice(0, 500);
+      const transient = [408, 429, 500, 502, 503, 504].includes(response.status);
+      lastError = new Error(response.status === 429
+        ? `Gemini quota or rate limit reached: ${reason}`
+        : `Gemini interaction error: ${reason}`);
+      if (transient && attempt + 1 < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+        continue;
+      }
+      throw lastError;
+    }
+    const text = geminiInteractionText(data);
+    if (!text) throw new Error(`Gemini interaction returned no text${data.status ? ` (${data.status})` : ""}.`);
+    return { response: text, model, usage: data.usage || null };
+  }
+  throw lastError || new Error("Gemini interaction did not complete.");
+}
+
 async function geminiGenerate(env, {
   system,
   messages,
@@ -1272,6 +1353,9 @@ async function geminiGenerate(env, {
   const apiKey = typeof env.GEMINI_API_KEY === "string" ? env.GEMINI_API_KEY.trim() : "";
   if (!apiKey) throw new Error("Gemini API is selected, but GEMINI_API_KEY is not configured. Run CONFIGURE_GEMINI_API.bat.");
   const model = geminiModelForTask(env, { mode, reasoningPower, imageData });
+  if (!imageData && !jsonSchema) {
+    return geminiInteract(env, { apiKey, model, system, messages, reasoningPower, maxTokens, timeoutMs, maxAttempts });
+  }
   const generationConfig = {
     temperature: Math.max(0, Math.min(1, Number(temperature) || 0)),
     topP: 0.95,
@@ -1343,20 +1427,40 @@ async function geminiGenerate(env, {
 
 async function geminiConnectionTest(env) {
   const startedAt = Date.now();
+  const apiKey = typeof env.GEMINI_API_KEY === "string" ? env.GEMINI_API_KEY.trim() : "";
+  if (!apiKey) return json({ error: "GEMINI_API_KEY is not configured. Run CONFIGURE_GEMINI_API.bat." }, 503);
+  const model = geminiModelForTask(env, { mode: "chat", reasoningPower: "standard" });
   try {
-    const result = await geminiGenerate(env, {
-      system: "You are a connection diagnostic. Reply with exactly: GEMINI ONLINE",
-      messages: [{ role: "user", content: "Run the connection diagnostic." }],
-      mode: "chat",
-      reasoningPower: "standard",
-      temperature: 0,
-      maxTokens: 256,
-      timeoutMs: 15_000,
-      maxAttempts: 1,
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        model,
+        input: "Reply with exactly: JARVIS ONLINE",
+        system_instruction: "You are a connection diagnostic. Follow the user's exact short response instruction.",
+        store: false,
+        generation_config: { max_output_tokens: 32, thinking_level: "minimal", thinking_summaries: "none" },
+      }),
+      signal: AbortSignal.timeout(20_000),
     });
-    return json({ status: "online", model: result.model, latencyMs: Date.now() - startedAt });
+    let data = {};
+    try { data = await response.json(); } catch {}
+    if (!response.ok || data.status === "failed") {
+      const reason = String(data && data.error && data.error.message || `HTTP ${response.status}`).replaceAll(apiKey, "[redacted]").slice(0, 500);
+      return json({ error: `Gemini live-response check failed: ${reason}` }, response.status === 401 || response.status === 403 ? 403 : 502);
+    }
+    const responseText = geminiInteractionText(data);
+    if (!responseText) return json({ error: `Gemini accepted the request but returned no text${data.status ? ` (${data.status})` : ""}.` }, 502);
+    return json({
+      status: "online",
+      model,
+      displayName: model,
+      liveResponse: true,
+      latencyMs: Date.now() - startedAt,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gemini connection failed.";
+    const timedOut = error && (error.name === "TimeoutError" || error.name === "AbortError");
+    const message = timedOut ? "Gemini did not complete the live response check within 20 seconds." : error instanceof Error ? error.message : "Gemini connection failed.";
     return json({ error: message.slice(0, 500) }, 502);
   }
 }
@@ -2000,7 +2104,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "Configure JARVIS_DESKTOP_MANIFEST_URL after publishing the first Windows release.",
-      websiteBuild: "1.13.6",
+      websiteBuild: "1.13.7",
     }, 200, isHead);
   }
   try {
@@ -2023,7 +2127,7 @@ async function desktopUpdate(request, env) {
       version,
       publishedAt: typeof release.publishedAt === "string" ? release.publishedAt.slice(0, 64) : "",
       notes: typeof release.notes === "string" ? release.notes.slice(0, 4_000) : "",
-      websiteBuild: "1.13.6",
+      websiteBuild: "1.13.7",
       installers: { exe, msi },
     }, 200, isHead);
   } catch (error) {
@@ -2031,7 +2135,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "The configured Windows release channel is temporarily unavailable.",
-      websiteBuild: "1.13.6",
+      websiteBuild: "1.13.7",
       error: error instanceof Error ? error.message.slice(0, 240) : "Update service error.",
     }, 502, isHead);
   }
@@ -2043,7 +2147,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/login") return login(request, env);
     if (request.method === "POST" && url.pathname === "/api/logout") return logout();
     if (url.pathname === "/api/health") {
-      return json({ service: "JARVIS", status: "online", build: "1.13.6", ai: Boolean(env.AI) });
+      return json({ service: "JARVIS", status: "online", build: "1.13.7", ai: Boolean(env.AI) });
     }
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/api/desktop-update") return desktopUpdate(request, env);
     const authorized = await isAuthorized(request, env);

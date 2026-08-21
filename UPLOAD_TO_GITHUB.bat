@@ -230,7 +230,7 @@ echo ============================================================
 echo SUCCESS: JARVIS was uploaded to:
 echo https://github.com/%JARVIS_GITHUB_REPOSITORY%
 echo.
-echo The v1.13.6 Unified Brain reliability build was started automatically.
+echo The v1.13.7 Gemini chat-response reliability build was started automatically.
 echo The GitHub Actions page will open so you can watch its progress.
 echo ============================================================
 echo.
