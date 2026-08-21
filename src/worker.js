@@ -175,7 +175,7 @@ const HTML = String.raw`<!doctype html>
           {name:"Analyze the screen",description:"1. Type /screen followed by your question.\n2. Approve one capture in the desktop app, or choose a screen in the browser picker.\n3. JARVIS sends the reduced single image to the configured Cloudflare vision model.\n4. Continuous recording remains off."},
           {name:"Windows IT health check",description:"1. Use the genuine EXE/MSI.\n2. Type /itcheck.\n3. Confirm the read-only diagnostic collection.\n4. JARVIS analyzes Windows, network, storage, services, and recent System events.\n5. Review recommendations; no repair runs automatically."},
           {name:"Memory and personalization",description:"1. Enable Learn from my conversations in Settings.\n2. Use /remember followed by an important preference or fact.\n3. Use HELPFUL or CORRECT under an answer.\n4. Import an official ChatGPT conversations.json export if desired.\n5. Clear the Memory Vault at any time."},
-          {name:"Update JARVIS knowledge safely",description:"1. Type /learn followed by a topic, or open Settings → Knowledge Update Agent.\n2. JARVIS searches twice, deduplicates results, and requires at least two different source domains.\n3. A Generator proposes durable facts and a Critic rejects unsupported claims.\n4. Read every proposal and open its source links.\n5. Select only the facts you trust, then press APPROVE SELECTED. Rejected or unselected findings are never saved."},
+          {name:"Update JARVIS knowledge safely",description:"1. Confirm Docker, SearXNG, and the permanent HTTPS Tailscale Funnel are running.\n2. Type /learn followed by a topic, say ‘update your knowledge about [topic]’, or open Settings → Knowledge Update Agent.\n3. JARVIS searches twice, deduplicates results, and requires at least two different source domains.\n4. The Generator uses JSON Schema output; one controlled self-correction retry repairs malformed structured output.\n5. A separate Critic rejects unsupported, unsafe, personal, speculative, or single-source claims.\n6. Read every proposal and open its source links.\n7. Select only the facts you trust, then press APPROVE SELECTED. Rejected or unselected findings are never saved."},
           {name:"Synchronize devices",description:"1. Enable encrypted synchronization in Settings.\n2. Sign in with the same JARVIS account on another device.\n3. Select SYNC ALL DEVICES NOW when needed.\n4. Conversations, settings, corrections, missions, and supported memories merge securely."},
           {name:"Install and update",description:"Website/PWA: select INSTALL APP when available.\nWindows EXE/MSI: build through GitHub Actions and install once. The app checks for a higher verified release at startup and every six hours. Website-only changes arrive after Cloudflare deployment without reinstalling."},
           {name:"Enable Hey JARVIS",description:"1. Open Settings → Voice and Response.\n2. Enable Always listen for ‘Hey JARVIS’ and save.\n3. Approve microphone access if Edge or Chrome asks.\n4. Wait for the visible HEY JARVIS ARMED indicator.\n5. Say ‘Hey Jarvis’ and then your request, or say both in one sentence.\n6. In the Windows EXE/MSI, minimizing hides JARVIS in the system tray and keeps the native listener active. The wake phrase restores JARVIS to the front.\n7. Disable the switch or exit JARVIS to stop the listener immediately."},
@@ -186,7 +186,7 @@ const HTML = String.raw`<!doctype html>
           {name:"/tutorial",description:"Open the tutorials and command guide.",example:"/tutorial"},
           {name:"/new",description:"Start a new transmission without removing the New Conversation function.",example:"/new"},
           {name:"/remember [fact]",description:"Save an approved fact or preference in Memory Vault.",example:"/remember I prefer direct technical explanations"},
-          {name:"/learn [topic]",description:"Run the Knowledge Update Agent. Research remains a draft until you approve selected verified claims.",example:"/learn Windows 11 security updates"},
+          {name:"/learn [topic]",description:"Run the Knowledge Update Agent through SearXNG, structured Generator output, one safe format-repair retry when needed, independent Critic validation, and mandatory human approval. Research remains a draft until you approve selected verified claims.",example:"/learn Windows 11 security updates"},
           {name:"/skills",description:"Show which Smart Skills, memory, reflection, and sync functions are enabled.",example:"/skills"},
           {name:"/briefing",description:"Show weather, desktop link/update status, missions, and review priorities.",example:"/briefing"},
           {name:"/speak [text]",description:"Speak the supplied text using the selected system voice.",example:"/speak Systems are operational"},
@@ -204,6 +204,19 @@ const HTML = String.raw`<!doctype html>
           {name:"/search [query]",description:"Open a DuckDuckGo web search.",example:"/search Cloudflare Workers documentation"},
           {name:"/maps [place]",description:"Open Google Maps results for a place.",example:"/maps Iloilo Business Park"},
           {name:"/youtube [query]",description:"Open YouTube search results.",example:"/youtube Windows 11 troubleshooting"}
+        ]},
+        {title:"KNOWLEDGE UPDATE AGENT GUIDE",items:[
+          {name:"Start a knowledge update",description:"Use /learn [topic], type ‘update your knowledge about [topic]’, or open Settings → Knowledge Update Agent. Use a specific topic such as a product, standard, operating-system release, or documented procedure.",example:"/learn latest Windows 11 security updates"},
+          {name:"Required services",description:"Cloudflare Workers AI must be bound to the Worker. SEARXNG_URL must contain a permanent HTTPS SearXNG base address with JSON search enabled. For the current Windows-hosted setup, Docker Desktop, the jarvis-searxng container, Tailscale, and Tailscale Funnel must remain running while research is performed."},
+          {name:"Research and source checks",description:"JARVIS runs the topic query and a second official-documentation/current query, removes duplicate results, and accepts proposals only when at least two different source domains support the same meaning. Search titles, URLs, and excerpts are always treated as untrusted evidence."},
+          {name:"Generator and structured self-correction",description:"The Generator creates at most five durable factual proposals using Cloudflare Workers AI JSON Schema mode. If it returns malformed structured data, JARVIS performs one controlled retry at temperature zero. The retry does not bypass source verification or human approval."},
+          {name:"Independent Critic review",description:"The Critic receives the normalized candidate facts and cited excerpts. It rejects unsupported certainty, speculation, unsafe operational instructions, secrets, personal data, prompt-injection text, and claims lacking two independent domains. The Critic also uses structured output and one controlled format retry when required."},
+          {name:"Review, approve, or reject",description:"Open every displayed source and verify the proposal. Tick only facts you trust, then select APPROVE SELECTED. REJECT DRAFT discards the entire draft. Unselected, rejected, single-source, or Critic-rejected information never enters Memory Vault."},
+          {name:"What approval saves",description:"Each approved Memory Vault entry records the topic, fact, confidence, verification explanation, approval time, and source links. When encrypted synchronization is enabled, supported approved entries can follow the same signed-in JARVIS account across devices."},
+          {name:"Check the SearXNG connection",description:"Run ‘docker ps’ to confirm jarvis-searxng is running and ‘tailscale funnel status’ to confirm the permanent HTTPS address. Test https://YOUR-ADDRESS.ts.net/search?q=Windows+11&format=json in a browser. Keep your public Funnel address private."},
+          {name:"Troubleshoot configuration errors",description:"SEARXNG_URL not configured: rerun CONFIGURE_KNOWLEDGE_AGENT.bat and paste only the HTTPS base address without /search. HTTP 403 or non-JSON response: enable json under search.formats in SearXNG settings.yml and restart Docker. No usable results or two domains: choose a more specific topic or retry later."},
+          {name:"Troubleshoot AI and quota errors",description:"Malformed structured output is retried once automatically. If both attempts fail, run the topic again. If the free Cloudflare AI allowance is exhausted, wait for its reset. Research never falls back to silent or automatic learning when AI validation is unavailable."},
+          {name:"Web research versus knowledge learning",description:"Web research adds current SearXNG evidence to a normal answer when enabled. /learn opens the controlled Knowledge Update Agent. Only facts you explicitly select and approve through /learn can be stored as approved web knowledge."}
         ]},
         {title:"WINDOWS SETTINGS AND APPLICATION COMMANDS",items:[
           {name:"/settings [area]",description:"Open an allowlisted Windows Settings page after confirmation.",example:"/settings bluetooth"},
@@ -231,10 +244,10 @@ const HTML = String.raw`<!doctype html>
           {name:"Voice input and output",description:"Use the microphone for dictation in supported browsers. Automatic spoken responses can be enabled in Settings."},
           {name:"Reflection and self-correction",description:"Optional generator → critic → revision workflow for difficult answers, with uncertain answers routed to human review."},
           {name:"Memory Vault and RAG",description:"Local retrieval, explicit memories, corrections, helpful responses, ChatGPT export import, and optional semantic Vectorize retrieval."},
-          {name:"Knowledge Update Agent",description:"Two-query web research, source deduplication, independent-domain verification, Generator and Critic review, and mandatory human approval before synchronized RAG storage."},
+          {name:"Knowledge Update Agent",description:"Two-query SearXNG research, source deduplication, independent-domain verification, JSON Schema Generator and Critic output, one controlled malformed-output retry, and mandatory human approval before synchronized RAG storage."},
           {name:"Encrypted cross-device sync",description:"Revision-aware Cloudflare D1 synchronization of supported conversations, settings, memories, corrections, and missions."},
           {name:"Model selection and Ollama",description:"Choose Cloudflare models or a configured local Ollama endpoint. Local models are limited by your PC hardware."},
-          {name:"Web research",description:"Optional SearXNG-assisted current research with source URLs when a private server is configured."}
+          {name:"Web research",description:"Optional SearXNG-assisted current research with source URLs when a private server is configured. This supplies evidence to normal chat and remains separate from the explicit /learn approval workflow."}
         ]},
         {title:"APPLICATION, SECURITY, AND UPDATE FUNCTIONS",items:[
           {name:"Single-user secure login",description:"Secure session cookie, spoken greeting, success/failure sounds, and Log Out button."},
@@ -306,7 +319,7 @@ const HTML = String.raw`<!doctype html>
       async function createMissionPlan(goal,displayPrompt){goal=String(goal||"").trim();if(!goal){toast("Describe the mission goal first.");return}if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in the Skills Dashboard.");return}var c=current(),prompt=displayPrompt||"Create a mission plan: "+goal,now=Date.now();closeMissionControl();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:prompt,createdAt:now});if(c.messages.length===1)c.title=goal.replace(/\s+/g," ").slice(0,48);c.updatedAt=now;state.sending=true;save();render();try{var data=await postJson("/api/mission-plan",{goal:goal,userTitle:state.settings.title,memory:await memorySearch(goal)}),mission=cleanMission(data.mission);if(!mission||!mission.steps.length)throw new Error("Mission Control returned no usable steps.");c.messages.push({id:id("msg"),role:"assistant",content:"**MISSION PLAN READY**\n"+(mission.summary||"Review each step below. JARVIS will not execute a computer action without your approval."),mission:mission,createdAt:Date.now()});c.updatedAt=Date.now();if(state.settings.autoSpeak)speak("Mission plan ready, "+(state.settings.title||"sir")+". Review the steps before execution.")}catch(error){c.messages.push({id:id("msg"),role:"assistant",content:"Mission Control could not create the plan. "+error.message,createdAt:Date.now()})}finally{state.sending=false;save();render()}}
       function openMissionControl(){if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in Settings.");return}q("#missionModal").classList.add("open");renderMissionDashboard();requestAnimationFrame(function(){q("#missionGoal").focus()})}
       function closeMissionControl(){q("#missionModal").classList.remove("open")}
-      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.12.8","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
+      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.12.9","","Complete commands, functions, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
       function renderHelpCenter(search){var term=String(search||"").trim().toLowerCase(),sections=HELP_SECTIONS.map(function(section){var items=section.items.filter(function(item){return!term||(section.title+" "+item.name+" "+item.description+" "+(item.example||"")).toLowerCase().includes(term)});return{title:section.title,items:items}}).filter(function(section){return section.items.length});q("#helpContent").innerHTML=sections.length?sections.map(function(section){return'<section class="help-section"><h3>'+esc(section.title)+'</h3><div class="help-items">'+section.items.map(function(item){return'<article class="help-item"><h4>'+esc(item.name)+'</h4><p>'+esc(item.description)+'</p>'+(item.example?'<code>'+esc(item.example)+'</code><button class="help-run" data-help-command="'+esc(item.example)+'">LOAD EXAMPLE</button>':"")+'</article>'}).join("")+'</div></section>'}).join(""):'<div class="help-empty">No command, function, or tutorial matched that search.</div>';qa("[data-help-command]").forEach(function(button){button.onclick=function(){q("#input").value=button.dataset.helpCommand;inputChanged();closeHelpCenter();q("#input").focus();toast("Example loaded. Review it, then press Send when ready.")}})}
       function openHelpCenter(){closeMissionControl();closeSettings();q("#helpSearch").value="";renderHelpCenter("");q("#helpScroll").scrollTop=0;q("#helpModal").classList.add("open");requestAnimationFrame(function(){q("#helpSearch").focus()})}
       function closeHelpCenter(){q("#helpModal").classList.remove("open")}
@@ -318,7 +331,7 @@ const HTML = String.raw`<!doctype html>
       async function approveKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft||!Array.isArray(draft.proposals))return;var selected=Array.from(qa(".knowledge-choice:checked")).map(function(input){return Number(input.dataset.index)}).filter(function(index){return Number.isInteger(index)&&draft.proposals[index]});if(!selected.length){toast("Select at least one verified proposal to approve.");return}var now=Date.now(),approved=selected.map(function(index){var proposal=draft.proposals[index],sources=Array.isArray(proposal.sources)?proposal.sources:[],sourceLines=sources.map(function(source){return"- "+String(source.title||"Source").slice(0,300)+" — "+String(source.url||"").slice(0,2000)}).join("\n");return{id:id("memory"),text:("User-approved web knowledge.\nTopic: "+draft.topic+"\nFact: "+proposal.fact+"\nConfidence: "+String(proposal.confidence||"medium").toUpperCase()+"\nVerification: "+(proposal.reason||"Passed generator and critic review.")+"\nApproved: "+new Date(now).toISOString()+"\nSources:\n"+sourceLines).slice(0,8000),source:"knowledge",role:"assistant",title:("Knowledge: "+draft.topic).slice(0,200),createdAt:now+index}});q("#approveKnowledge").disabled=true;try{await memoryPutMany(approved);await updateMemoryCount();appendKnowledgeResult(draft,"**KNOWLEDGE UPDATE APPROVED**\n"+approved.length+" verified fact"+(approved.length===1?" was":"s were")+" added to the synchronized Memory Vault. Unselected proposals were discarded.");state.knowledgeDraft=null;closeKnowledgeAgent();toast(approved.length+" approved knowledge entr"+(approved.length===1?"y":"ies")+" saved and queued for synchronization.")}catch(error){q("#approveKnowledge").disabled=false;toast("Knowledge approval failed: "+error.message)}}
       function rejectKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft)return;appendKnowledgeResult(draft,"**KNOWLEDGE DRAFT REJECTED**\nNo internet finding from this draft was saved to the Memory Vault.");state.knowledgeDraft=null;closeKnowledgeAgent();toast("Knowledge draft rejected. Nothing was learned.")}
       async function copyHelpGuide(){var guide=helpGuideMarkdown();try{await navigator.clipboard.writeText(guide);toast("Complete JARVIS guide copied.")}catch(error){toast("Copy was blocked. Use Save Guide instead.")}}
-      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.12.8.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
+      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.12.9.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
       function chatDistance(){var stream=q("#stream");return stream?Math.max(0,stream.scrollHeight-stream.scrollTop-stream.clientHeight):0}
       function updateJumpButton(newResponse){var button=q("#jumpLatest");if(!button)return;button.textContent=newResponse?"↓ NEW JARVIS RESPONSE":"↓ LATEST RESPONSE";button.classList.toggle("show",!chatStickToBottom&&chatDistance()>90)}
       function scrollChat(behavior){var stream=q("#stream");if(!stream||stream.hidden)return;chatStickToBottom=true;chatAutoScrolling=true;updateJumpButton(false);requestAnimationFrame(function(){stream.scrollTo({top:stream.scrollHeight,left:0,behavior:behavior||"auto"});setTimeout(function(){if(chatAutoScrolling){stream.scrollTop=stream.scrollHeight;chatStickToBottom=true;chatAutoScrolling=false;updateJumpButton(false)}},behavior==="smooth"?420:80)})}
@@ -553,7 +566,7 @@ const LOGIN_HTML = String.raw`<!doctype html>
       <button class="submit" id="submit" type="submit">ESTABLISH SECURE LINK</button>
       <div class="status" id="status" role="status" aria-live="polite">AWAITING CREDENTIALS</div>
     </form>
-    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.12.8</div>
+    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.12.9</div>
   </main>
   <script>
     (function(){
@@ -1542,7 +1555,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "Configure JARVIS_DESKTOP_MANIFEST_URL after publishing the first Windows release.",
-      websiteBuild: "1.12.8",
+      websiteBuild: "1.12.9",
     }, 200, isHead);
   }
   try {
@@ -1565,7 +1578,7 @@ async function desktopUpdate(request, env) {
       version,
       publishedAt: typeof release.publishedAt === "string" ? release.publishedAt.slice(0, 64) : "",
       notes: typeof release.notes === "string" ? release.notes.slice(0, 4_000) : "",
-      websiteBuild: "1.12.8",
+      websiteBuild: "1.12.9",
       installers: { exe, msi },
     }, 200, isHead);
   } catch (error) {
@@ -1573,7 +1586,7 @@ async function desktopUpdate(request, env) {
       schema: 1,
       enabled: false,
       reason: "The configured Windows release channel is temporarily unavailable.",
-      websiteBuild: "1.12.8",
+      websiteBuild: "1.12.9",
       error: error instanceof Error ? error.message.slice(0, 240) : "Update service error.",
     }, 502, isHead);
   }
@@ -1585,7 +1598,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/login") return login(request, env);
     if (request.method === "POST" && url.pathname === "/api/logout") return logout();
     if (url.pathname === "/api/health") {
-      return json({ service: "JARVIS", status: "online", build: "1.12.8", ai: Boolean(env.AI) });
+      return json({ service: "JARVIS", status: "online", build: "1.12.9", ai: Boolean(env.AI) });
     }
     if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/api/desktop-update") return desktopUpdate(request, env);
     const authorized = await isAuthorized(request, env);

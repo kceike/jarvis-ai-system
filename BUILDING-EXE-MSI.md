@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.12.8 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.12.9 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.12.8-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.12.8-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.12.9-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.12.9-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.12.8 Knowledge Update Agent reliability upgrade is additive: every earlier JARVIS feature and command remains present. Generator and Critic responses now use Cloudflare Workers AI JSON Schema mode and receive one controlled self-correction retry if a model returns malformed structured data. Weather natural-command parsing, Settings overlap fixes, Always Listen, system-tray wake listening, safe window repaint behavior, and all existing action confirmations remain enforced.
+The v1.12.9 Help Center upgrade is additive: every earlier JARVIS feature and command remains present. The searchable and downloadable guide now documents the complete Knowledge Update Agent workflow, required SearXNG/Tailscale services, source checks, Generator format correction, independent Critic review, approval rules, and troubleshooting. The v1.12.8 structured JSON Schema reliability upgrade, weather natural-command parsing, Settings overlap fixes, Always Listen, system-tray wake listening, safe window repaint behavior, and all existing action confirmations remain enforced.
 
 ## Build with GitHub Actions
 
