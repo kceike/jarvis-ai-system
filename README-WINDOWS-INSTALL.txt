@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.13.9
+JARVIS AI - WINDOWS INSTALLER 1.14.0
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,18 +9,16 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.13.9 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.14.0 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.13.9 keeps every earlier free function, corrects the live Gemini test
-for models that accept Low/Medium/High thinking, and immediately recovers a
-request interrupted during app startup, update, reload, sync, or tray restore.
-It also retains the updated Help Center and Unified JARVIS Brain,
-Maximum reasoning, larger context, Deep Research, document/audio analysis,
-neural speech, safe local-file search, and adaptive maximum Ollama configuration.
-Gemini chat and code use the current Interactions API with a live response test,
-bounded retries, visible failures, and safe Cloudflare/Ollama fallbacks. All
-Knowledge Agent approval rules remain enforced.
+Version 1.14.0 simplifies JARVIS to the built-in Cloudflare AI brain with an
+optional local Ollama fallback for supported text requests in the Windows app.
+It keeps every earlier command and non-Google function, including the Help
+Center, automatic code routing, Maximum reasoning, larger context management,
+Deep Research, document/audio/Office/PSD analysis, neural speech, safe local-file
+search, memory/RAG, synchronization, Windows controls, and adaptive maximum
+Ollama configuration. All Knowledge Agent approval rules remain enforced.
 It keeps the visible confirmation after an automatic update. Install v1.10.0 or later once, then configure the release channel with
 CONFIGURE_WINDOWS_AUTO_UPDATE.bat. Future verified native releases download in
 the background and install when JARVIS closes.

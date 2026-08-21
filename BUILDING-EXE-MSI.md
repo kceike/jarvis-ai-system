@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.13.9 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.14.0 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.13.9-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.13.9-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.14.0-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.14.0-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-The v1.13.9 hotfix uses the model-supported Low thinking level for the small Gemini live-response diagnostic, retains High for Maximum reasoning requests, and removes the startup timing gap from interrupted-request recovery.
+Version 1.14.0 uses the built-in Cloudflare AI binding for Unified Brain requests and retains optional local Ollama fallback for supported text work in the genuine Windows app. The external Google provider, its diagnostic, and its setup helper were intentionally removed; all other desktop capabilities and safety confirmations remain.
 
 ## Build with GitHub Actions
 

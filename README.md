@@ -25,7 +25,7 @@ An original, responsive personal AI, coding copilot, image generator, and voice 
 - Coding copilot for writing, reviewing, debugging, and explaining code
 - Text-to-image generation
 - Six selectable Cloudflare text models for economy, speed, general work, stronger answers, reasoning, and coding
-- Optional Google Gemini API provider with long context, coding, vision, Deep Research, structured Knowledge Agent output, and Gemini Generator → Critic → Revision
+- Unified built-in Cloudflare AI for chat, coding, reasoning, vision, Deep Research, structured Knowledge Agent output, and Generator → Critic → Revision
 - Optional local Ollama provider with no per-message cloud AI quota
 - Optional current-web research through your own SearXNG server, with source links
 - Controlled Knowledge Update Agent with two-query research, independent-domain checks, Generator + Critic validation, and mandatory human approval before RAG storage
@@ -126,8 +126,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.13.9-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.13.9-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.14.0-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.14.0-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -135,7 +135,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.13.9 retains every v1.13.8 feature and earlier slash command. The small Gemini Interactions API diagnostic now uses the model-supported Low thinking level; normal Maximum requests still use High. Interrupted requests are recovered immediately on launch and whenever synchronized state reintroduces an unanswered user message, without the previous eight-second startup gap. Every normal answer remains in chat and is spoken automatically while Automatic voice response is enabled. All confirmations and permission boundaries remain enforced.
+Version 1.14.0 removes the optional Google provider at the owner's request and routes the Unified JARVIS Brain through built-in Cloudflare Workers AI, with optional local Ollama fallback in the genuine Windows app. Every non-Google function from v1.13.9 remains: natural and slash commands, coding, vision, voice, wake phrase, files and Office/PSD analysis, memory/RAG, sync, reflection, research, Mission Control, Windows tools, and verified updates. Legacy saved provider settings migrate to Unified automatically. Every normal answer remains in chat and is spoken while Automatic voice response is enabled. All confirmations and permission boundaries remain enforced.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
@@ -305,21 +305,15 @@ The allowlist is near the top of `src/worker.js`. All Cloudflare options consume
 
 The Llama 3.2 Vision model requires acceptance of Meta's license in the Cloudflare account before first use. Follow the [official Cloudflare model page](https://developers.cloudflare.com/workers-ai/models/llama-3.2-11b-vision-instruct/) and accept the license deliberately; the batch file does not accept legal terms on your behalf.
 
-## Google Gemini API — optional maximum profile
+## Unified JARVIS Brain
 
-Gemini is optional. It does not replace or remove Cloudflare AI, Ollama, natural-language commands, slash commands, voice, memory, tools, or the Windows app.
+Unified mode needs no additional third-party AI key. The Cloudflare `AI` binding already included in `wrangler.jsonc` supplies JARVIS chat, code, reasoning, vision, Deep Research, Knowledge Update structured output, embeddings, transcription, speech, and image generation.
 
-1. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Double-click `CONFIGURE_GEMINI_API.bat` in the extracted project folder.
-3. Paste the key only at Wrangler's hidden secret prompt. The helper stores it as the Cloudflare Worker secret `GEMINI_API_KEY` and redeploys JARVIS.
-4. In JARVIS, open **Settings → Intelligence provider → Google Gemini API**.
-5. For the strongest JARVIS profile, choose **Reasoning power → Maximum**, **Context window → 120K**, and leave **Reflection and self-correction** enabled.
+Open **Settings → JARVIS brain** and keep **Unified JARVIS Brain — automatic**. **ACTIVATE MAXIMUM UNIFIED BRAIN** selects Auto Director, Maximum reasoning, 120K input management, reflection, web research, and automatic voice. The 120K setting is a safe application-side context budget; the selected model's real context and output limits still apply.
 
-The default is `gemini-3.7-flash`. The setup helper can store a validated `GEMINI_MODEL` override when Google changes model availability. Advanced deployers may also set `GEMINI_FAST_MODEL`, `GEMINI_REASONING_MODEL`, `GEMINI_CODE_MODEL`, and `GEMINI_VISION_MODEL`; JARVIS falls back to the primary model when an override is absent.
+In the genuine Windows app, Unified mode can try the configured local Ollama model if a supported Cloudflare text request fails. Cloudflare-only mode reports Cloudflare errors directly, and Ollama-only mode stays local for supported text work. Vision, image synthesis, cloud speech, transcription, embeddings, and structured Knowledge Update processing continue using their established Cloudflare routes.
 
-The maximum profile supports chat, coding, uploaded text and document context, PNG/JPEG/WebP vision, one-time Screen Vision, Windows IT report analysis, cited Deep Research, structured Knowledge Update generation/criticism, up to 8,192 output tokens, and Gemini-based Generator → Critic → optional Revision. Image generation, audio transcription, neural voice, embeddings, and other existing specialist modules keep their established Cloudflare routes.
-
-Gemini is not unlimited. Free availability, rate limits, daily quotas, model access, pricing, and data handling are controlled by Google and can change. Review the current [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing), [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits), and [terms](https://ai.google.dev/gemini-api/terms) before using confidential or regulated content. Never put a Gemini key in `wrangler.jsonc`, `.env`, JavaScript, GitHub, the browser, the EXE, or the MSI.
+Cloudflare Workers AI is not unlimited. Free allocation, model availability, and model-specific rates are controlled by Cloudflare. JARVIS displays quota errors instead of silently claiming success.
 
 ## Local AI with Ollama
 
