@@ -1,6 +1,6 @@
 {
   "name": "jarvis-ai-desktop",
-  "version": "1.13.7",
+  "version": "1.13.8",
   "description": "Secure Windows desktop shell for the JARVIS Cloudflare AI system",
   "main": "main.cjs",
   "private": true,
