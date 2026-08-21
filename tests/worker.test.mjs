@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import worker from "../src/worker.js";
+import worker, { cleanWeatherLocation, parseStructuredAiResult } from "../src/worker.js";
 
 const AUTH_ENV = Object.freeze({
   JARVIS_USERNAME: "Kristian",
@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.12\.6/);
+  assert.match(html, /BUILD 1\.12\.8/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.12.6");
+  assert.equal((await health.json()).build, "1.12.8");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.12.6");
+  assert.equal(manifest.websiteBuild, "1.12.8");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -154,6 +154,8 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /Web research/);
   assert.match(html, /id="weatherLocation"/);
   assert.match(html, /\/weather/);
+  assert.match(html, /function cleanWeatherLocationInput/);
+  assert.match(html, /value=cleanWeatherLocationInput\(match\?match\[1\]:""\)/);
   assert.match(html, /\/settings bluetooth/);
   assert.match(html, /\/controlpanel/);
   assert.match(html, /\/app notepad/);
@@ -217,7 +219,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.12\.6\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.12\.8\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -275,7 +277,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.12\.6"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.12\.8"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -301,7 +303,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.12.6");
+  assert.equal(desktopPackage.version, "1.12.8");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
   assert.equal(desktopPackage.devDependencies["electron-builder"], "26.15.2");
   assert.deepEqual(desktopPackage.build.win.target.map((item) => item.target), ["nsis", "msi"]);
@@ -525,6 +527,54 @@ test("returns current weather and a three-day forecast", async () => {
     assert.equal(data.source, "Open-Meteo");
     assert.equal(called[0].searchParams.get("name"), "Iloilo City, Philippines");
     assert.equal(called[1].searchParams.get("forecast_days"), "3");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("cleans natural weather locations without damaging legitimate place names", () => {
+  assert.equal(cleanWeatherLocation("Iloilo City and show your sources."), "Iloilo City");
+  assert.equal(cleanWeatherLocation("Iloilo City, please include the source"), "Iloilo City");
+  assert.equal(cleanWeatherLocation("Iloilo City right now?"), "Iloilo City");
+  assert.equal(cleanWeatherLocation("Trinidad and Tobago"), "Trinidad and Tobago");
+  assert.equal(cleanWeatherLocation("Show Low, Arizona"), "Show Low, Arizona");
+});
+
+test("sanitizes trailing instructions before weather geocoding", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/weather", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ location: "Iloilo City and show your sources." }),
+  });
+  const originalFetch = globalThis.fetch;
+  const called = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    called.push(url);
+    if (url.hostname === "geocoding-api.open-meteo.com") {
+      return Response.json({
+        results: [{ name: "Iloilo City", admin1: "Western Visayas", country: "Philippines", latitude: 10.6969, longitude: 122.5644, timezone: "Asia/Manila" }],
+      });
+    }
+    if (url.hostname === "api.open-meteo.com") {
+      return Response.json({
+        timezone: "Asia/Manila",
+        current: { temperature_2m: 29, apparent_temperature: 34, relative_humidity_2m: 73, weather_code: 2, wind_speed_10m: 9 },
+        daily: {
+          time: ["2026-08-21", "2026-08-22", "2026-08-23"],
+          weather_code: [2, 61, 95],
+          temperature_2m_max: [31, 30, 29],
+          temperature_2m_min: [25, 24, 24],
+          precipitation_probability_max: [35, 65, 80],
+        },
+      });
+    }
+    throw new Error("Unexpected external URL: " + url.href);
+  };
+  try {
+    const response = await worker.fetch(request, AUTH_ENV);
+    assert.equal(response.status, 200);
+    assert.equal(called[0].searchParams.get("name"), "Iloilo City");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -756,6 +806,21 @@ test("Knowledge Update Agent requires Cloudflare AI and never falls back to auto
   assert.doesNotMatch(JSON.stringify(data), /saved|memoryId/i);
 });
 
+test("parses Workers AI JSON Mode objects and fenced JSON safely", () => {
+  assert.deepEqual(parseStructuredAiResult({ response: { approvedIndexes: [0], summary: "Approved" } }), {
+    approvedIndexes: [0],
+    summary: "Approved",
+  });
+  assert.deepEqual(parseStructuredAiResult({ response: "```json\n{\"approvedIndexes\":[0],\"summary\":\"Approved\"}\n```" }), {
+    approvedIndexes: [0],
+    summary: "Approved",
+  });
+  assert.throws(
+    () => parseStructuredAiResult({ response: '{"approvedIndexes":[0] "summary":"Broken"}' }, "Knowledge critic"),
+    /malformed structured data/i,
+  );
+});
+
 test("Knowledge Update Agent cross-checks two domains and returns only critic-approved proposals", async () => {
   const originalFetch = globalThis.fetch;
   const aiCalls = [];
@@ -805,7 +870,59 @@ test("Knowledge Update Agent cross-checks two domains and returns only critic-ap
     assert.match(data.policy, /explicitly approves/);
     assert.match(aiCalls[0].input.messages[0].content, /untrusted evidence/);
     assert.match(aiCalls[1].input.messages[0].content, /untrusted data/);
+    assert.equal(aiCalls[0].input.response_format.type, "json_schema");
+    assert.equal(aiCalls[1].input.response_format.type, "json_schema");
+    assert.match(aiCalls[0].model, /llama-3\.1-8b-instruct-fast/);
     assert.doesNotMatch(JSON.stringify(data), /memoryId|automatically saved/i);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Knowledge Update Agent self-corrects one malformed generator response", async () => {
+  const originalFetch = globalThis.fetch;
+  const aiCalls = [];
+  globalThis.fetch = async () => Response.json({ results: [
+    { title: "Official Windows documentation", url: "https://learn.example.com/windows", content: "Windows updates should be tested before organizational deployment." },
+    { title: "Independent Windows standard", url: "https://standards.example.org/windows", content: "Organizations should test Windows updates before broad deployment." },
+  ] });
+  const correctedGenerator = {
+    summary: "One corrected proposal.",
+    proposals: [{
+      fact: "Windows updates should be tested before broad organizational deployment.",
+      confidence: "high",
+      sourceIndexes: [1, 2],
+      reason: "Both independent sources support testing before broad deployment.",
+    }],
+  };
+  const env = {
+    ...AUTH_ENV,
+    SEARXNG_URL: "https://search.example.com",
+    AI: {
+      async run(model, input) {
+        aiCalls.push({ model, input });
+        if (aiCalls.length === 1) {
+          return { response: '{"summary":"Broken","proposals":[{"fact":"Windows updates should be tested before broad organizational deployment.","confidence":"high","sourceIndexes":[1,2] "reason":"Missing comma"}]}' };
+        }
+        if (aiCalls.length === 2) return { response: correctedGenerator };
+        return { response: { approvedIndexes: [0], summary: "The corrected claim passed independent-source review." } };
+      },
+    },
+  };
+  try {
+    const request = await authorizedRequest("https://jarvis.test/api/knowledge-update", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ topic: "Windows 11" }),
+    });
+    const response = await worker.fetch(request, env);
+    const data = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(aiCalls.length, 3);
+    assert.equal(aiCalls[1].input.temperature, 0);
+    assert.match(aiCalls[1].input.messages.at(-1).content, /previous structured response was invalid/i);
+    assert.equal(data.proposals.length, 1);
+    assert.match(data.summary, /passed independent-source review/i);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -862,5 +979,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.12.6", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.12.8", ai: false });
 });
