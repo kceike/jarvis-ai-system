@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.14.1
+JARVIS AI - WINDOWS INSTALLER 1.15.0
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,13 +9,15 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.14.1 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.15.0 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.14.1 simplifies JARVIS to the built-in Cloudflare AI brain with an
-optional local Ollama fallback for supported text requests in the Windows app.
-It also pauses cloud sync while a reply is being generated and limits recovery
-notices to requests that were genuinely interrupted by a close or reload.
+Version 1.15.0 adds the Free-Max Unified Brain with current general, reasoning,
+coding, and vision routes, safe temporary-model fallback, global context
+budgeting, adaptive reflection, and the live /aicheck diagnostic. Optional local
+Ollama fallback remains available for supported text requests in the Windows app.
+Cloud sync still pauses while a reply is generated, and recovery notices remain
+limited to requests genuinely interrupted by a close or reload.
 It keeps every earlier command and non-Google function, including the Help
 Center, automatic code routing, Maximum reasoning, larger context management,
 Deep Research, document/audio/Office/PSD analysis, neural speech, safe local-file

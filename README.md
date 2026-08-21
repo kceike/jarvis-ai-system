@@ -126,8 +126,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.14.1-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.14.1-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.15.0-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.15.0-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -135,7 +135,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.14.1 fixes the recurring false interrupted-request response. Encrypted cloud sync now waits while an AI answer is being generated, the finished result is attached to the live conversation by ID, and startup recovery runs only for a request that was genuinely pending when JARVIS closed or reloaded. JARVIS continues to use built-in Cloudflare Workers AI with optional local Ollama fallback in the genuine Windows app. Natural and slash commands, coding, vision, voice, wake phrase, files and Office/PSD analysis, memory/RAG, sync, reflection, research, Mission Control, Windows tools, and verified updates remain available. Every normal answer remains in chat and is spoken while Automatic voice response is enabled.
+Version 1.15.0 introduces the Free-Max Unified Brain. Current Cloudflare routes handle general chat (GLM 4.7 Flash), maximum reasoning (GPT-OSS 120B), code (Qwen3 30B), and vision (Llama 4 Scout). Temporary model outages use a bounded built-in fallback cascade, but quota and account errors are never hidden. The 32K/64K/120K managed-character budget now covers all conversation, attachment, memory, RAG, and research input together. Adaptive reflection spends extra Generator → Critic → Revision calls only on code and complex work. Type `/aicheck` for a live model, binding, sync, RAG, research, document, and Windows-link diagnostic. The v1.14.1 chat-delivery race protections remain. Natural and slash commands, voice, wake phrase, file and Office/PSD analysis, memory/RAG, sync, research, Mission Control, Windows tools, and verified updates remain available.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
@@ -291,29 +291,29 @@ Set `IOT_WEBHOOK_URL` in `wrangler.jsonc` to an HTTPS endpoint that you control.
 
 ## AI models
 
-- Eco: `@cf/meta/llama-3.2-1b-instruct`
-- Fast: `@cf/meta/llama-3.2-3b-instruct`
-- Balanced: `@cf/meta/llama-3.1-8b-instruct-fp8-fast`
-- Strong: `@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- Reasoning: `@cf/deepseek-ai/deepseek-r1-distill-qwen-32b`
+- Efficient/Balanced: `@cf/zai-org/glm-4.7-flash`
+- Fast/Vision fallback: `@cf/meta/llama-4-scout-17b-16e-instruct`
+- Strong/Reasoning: `@cf/openai/gpt-oss-120b`
 - Coding: `@cf/qwen/qwen3-30b-a3b-fp8`
 - Images: `@cf/black-forest-labs/flux-1-schnell`
-- Vision understanding: `@cf/meta/llama-3.2-11b-vision-instruct`
+- Vision understanding: `@cf/meta/llama-4-scout-17b-16e-instruct`
 - Semantic embeddings: `@cf/baai/bge-small-en-v1.5` (384 dimensions)
+- Audio transcription: `@cf/openai/whisper-large-v3-turbo`
+- Neural voice: `@cf/myshell-ai/melotts`
 
 The allowlist is near the top of `src/worker.js`. All Cloudflare options consume the same account-level free daily allocation at model-specific rates. Check the current catalog before changing IDs because models and billing requirements can change.
 
-The Llama 3.2 Vision model requires acceptance of Meta's license in the Cloudflare account before first use. Follow the [official Cloudflare model page](https://developers.cloudflare.com/workers-ai/models/llama-3.2-11b-vision-instruct/) and accept the license deliberately; the batch file does not accept legal terms on your behalf.
+If Cloudflare requires a license acceptance or account action for a selected model, complete it deliberately in the Cloudflare dashboard; the batch files never accept legal terms or enable billing on your behalf.
 
 ## Unified JARVIS Brain
 
 Unified mode needs no additional third-party AI key. The Cloudflare `AI` binding already included in `wrangler.jsonc` supplies JARVIS chat, code, reasoning, vision, Deep Research, Knowledge Update structured output, embeddings, transcription, speech, and image generation.
 
-Open **Settings → JARVIS brain** and keep **Unified JARVIS Brain — automatic**. **ACTIVATE MAXIMUM UNIFIED BRAIN** selects Auto Director, Maximum reasoning, 120K input management, reflection, web research, and automatic voice. The 120K setting is a safe application-side context budget; the selected model's real context and output limits still apply.
+Open **Settings → JARVIS brain** and keep **Unified JARVIS Brain — automatic**. **ACTIVATE FREE-MAX UNIFIED BRAIN** selects Free-Max Director, Maximum reasoning, the globally budgeted 120K-character input profile, adaptive reflection, web research, and automatic voice. The selected model's real token and output limits still apply. Select **RUN COMPLETE JARVIS SELF-CHECK** or type `/aicheck` after deployment to perform a real live model probe and inspect optional resource bindings.
 
 In the genuine Windows app, Unified mode can try the configured local Ollama model if a supported Cloudflare text request fails. Cloudflare-only mode reports Cloudflare errors directly, and Ollama-only mode stays local for supported text work. Vision, image synthesis, cloud speech, transcription, embeddings, and structured Knowledge Update processing continue using their established Cloudflare routes.
 
-Cloudflare Workers AI is not unlimited. Free allocation, model availability, and model-specific rates are controlled by Cloudflare. JARVIS displays quota errors instead of silently claiming success.
+Cloudflare Workers AI is not unlimited. The current free allocation is 10,000 neurons per day and resets at 00:00 UTC; model availability and rates remain controlled by Cloudflare. JARVIS excludes routes that explicitly require paid billing and displays quota or account errors instead of silently claiming success.
 
 ## Local AI with Ollama
 

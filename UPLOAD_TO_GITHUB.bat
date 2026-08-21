@@ -191,7 +191,7 @@ if defined JARVIS_ADOPTED_REMOTE_HISTORY (
 )
 if errorlevel 1 goto :failed
 
-rem Version 1.14.1 intentionally retires the old external-provider helper.
+rem Version 1.15.0 keeps the old external-provider helper retired.
 rem Fresh ZIP uploads preserve unrelated GitHub-only files, so stage this one
 rem explicit deletion after the safe overlay instead of deleting broadly.
 git rm -f --ignore-unmatch CONFIGURE_GEMINI_API.bat >nul 2>nul
@@ -236,7 +236,7 @@ echo ============================================================
 echo SUCCESS: JARVIS was uploaded to:
 echo https://github.com/%JARVIS_GITHUB_REPOSITORY%
 echo.
-echo The v1.14.1 reliable-chat installer build was started automatically.
+echo The v1.15.0 Free-Max Unified Brain installer build was started automatically.
 echo The GitHub Actions page will open so you can watch its progress.
 echo ============================================================
 echo.

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import worker, { cleanWeatherLocation, parseStructuredAiResult } from "../src/worker.js";
+import worker, { cleanWeatherLocation, fitConversationMessages, parseStructuredAiResult } from "../src/worker.js";
 
 const AUTH_ENV = Object.freeze({
   JARVIS_USERNAME: "Kristian",
@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.14\.1/);
+  assert.match(html, /BUILD 1\.15\.0/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.14.1");
+  assert.equal((await health.json()).build, "1.15.0");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.14.1");
+  assert.equal(manifest.websiteBuild, "1.15.0");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -224,7 +224,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.14\.1\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.15\.0\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -234,7 +234,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /id="reasoningPower"/);
   assert.match(html, /id="contextWindow"/);
   assert.match(html, /id="neuralVoice"/);
-  assert.match(html, /Auto Director/);
+  assert.match(html, /Free-Max Director/);
   assert.match(html, /\/deepresearch \[question\]/);
   assert.match(html, /\/filesearch \[name or text\]/);
   assert.match(html, /\/learnfiles/);
@@ -277,9 +277,9 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /e\.key(?:===|!==)"Escape"/);
   assert.match(html, /id="newChat"/);
   assert.match(html, /Unified JARVIS Brain — automatic/);
-  assert.match(html, /ACTIVATE MAXIMUM UNIFIED BRAIN/);
+  assert.match(html, /ACTIVATE FREE-MAX UNIFIED BRAIN/);
   assert.doesNotMatch(html, /TEST GEMINI CONNECTION/);
-  assert.match(html, /UNIFIED BRAIN · SELECTING CLOUDFLARE MODEL/);
+  assert.match(html, /UNIFIED BRAIN · SELECTING FREE ROUTE/);
   assert.match(html, /CLOUD ROUTES BUSY · TRYING LOCAL OLLAMA/);
   assert.match(html, /if\(state\.settings\.autoSpeak\)speak\(reply\.content\)/);
   assert.match(html, /function newChat\(/);
@@ -305,17 +305,21 @@ test("documents the complete Knowledge Update Agent workflow in the Help Center"
   assert.match(html, /CONFIGURE_KNOWLEDGE_AGENT\.bat/);
   assert.match(html, /Web research versus knowledge learning/);
   assert.match(html, /Rejected or unselected findings are never saved/);
-  assert.match(html, /Version 1\.14\.1/);
+  assert.match(html, /Version 1\.15\.0/);
 });
 
-test("documents the v1.14.1 reliable chat-delivery upgrade and complete response workflow", async () => {
+test("documents the v1.15.0 Free-Max brain and complete response workflow", async () => {
   const request = await authorizedRequest("https://jarvis.test/");
   const response = await worker.fetch(request, AUTH_ENV);
   const html = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(html, /VERSION 1\.14\.1/);
-  assert.match(html, /Version 1\.14\.1 reliable chat delivery/);
+  assert.match(html, /VERSION 1\.15\.0/);
+  assert.match(html, /Version 1\.15\.0 Free-Max Unified Brain/);
+  assert.match(html, /RUN COMPLETE JARVIS SELF-CHECK/);
+  assert.match(html, /\/aicheck/);
+  assert.match(html, /GPT-OSS 120B/);
+  assert.match(html, /GLM 4\.7 Flash/);
   assert.match(html, /Generate and copy code/);
   assert.match(html, /Test Unified JARVIS Brain/);
   assert.match(html, /Built-in Cloudflare AI/);
@@ -353,7 +357,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.14\.1"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.15\.0"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -372,6 +376,12 @@ test("contains no active Google provider integration in the Worker runtime", asy
   assert.doesNotMatch(source, /generativelanguage\.googleapis\.com/);
   assert.doesNotMatch(source, /GEMINI_API_KEY|GEMINI_MODEL/);
   assert.doesNotMatch(source, /value="gemini"|api\/gemini-test/);
+  assert.doesNotMatch(source, /@cf\/meta\/llama-3\.|@cf\/deepseek-ai\/deepseek-r1/);
+  assert.doesNotMatch(source, /kimi-k2\.[67]|glm-5\.2|deepseek-v4/i);
+  assert.match(source, /@cf\/zai-org\/glm-4\.7-flash/);
+  assert.match(source, /@cf\/openai\/gpt-oss-120b/);
+  assert.match(source, /@cf\/qwen\/qwen3-30b-a3b-fp8/);
+  assert.match(source, /@cf\/meta\/llama-4-scout-17b-16e-instruct/);
 });
 
 test("includes a standard secure EXE and MSI build project", async () => {
@@ -388,7 +398,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.14.1");
+  assert.equal(desktopPackage.version, "1.15.0");
   assert.equal(desktopPackage.dependencies["ag-psd"], "31.0.2");
   assert.equal(desktopPackage.dependencies.jszip, "3.10.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
@@ -745,7 +755,7 @@ test("migrates a legacy provider value to built-in Cloudflare AI", async () => {
   assert.deepEqual(data.toolsUsed, ["vision", "reflection"]);
   assert.equal(data.reflection.used, true);
   assert.equal(calls.length, 2);
-  assert.match(calls[0].model, /vision/);
+  assert.match(calls[0].model, /llama-4-scout/);
   assert.match(calls[0].input.messages[0].content, /expert coding copilot/);
   assert.equal(JSON.stringify(calls).includes("unused-legacy-secret"), false);
 });
@@ -761,7 +771,7 @@ test("removes the retired provider diagnostic endpoint", async () => {
   assert.deepEqual(await response.json(), { error: "Method not allowed." });
 });
 
-test("Auto Director routes maximum complex work through reasoning and critic models", async () => {
+test("Free-Max Director routes maximum complex work through current reasoning and critic models", async () => {
   const calls = [];
   const env = {
     ...AUTH_ENV,
@@ -779,6 +789,7 @@ test("Auto Director routes maximum complex work through reasoning and critic mod
     body: JSON.stringify({
       modelKey: "auto",
       reasoningPower: "max",
+      reflectionMode: true,
       contextWindow: 120000,
       messages: [{ role: "user", content: "Analyze this complex architecture and compare the safest strategies." }],
     }),
@@ -787,8 +798,8 @@ test("Auto Director routes maximum complex work through reasoning and critic mod
   const data = await response.json();
   assert.equal(response.status, 200);
   assert.equal(data.modelKey, "reasoning");
-  assert.equal(calls[0], "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
-  assert.equal(calls[1], "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
+  assert.equal(calls[0], "@cf/openai/gpt-oss-120b");
+  assert.equal(calls[1], "@cf/openai/gpt-oss-120b");
   assert.equal(data.reflection.used, true);
 });
 
@@ -952,7 +963,7 @@ test("routes an allowed model and includes Memory Vault context", async () => {
   const data = await response.json();
   assert.equal(response.status, 200);
   assert.equal(data.modelKey, "reasoning");
-  assert.equal(selectedModel, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
+  assert.equal(selectedModel, "@cf/openai/gpt-oss-120b");
   assert.match(systemPrompt, /prefers concise technical answers/);
 });
 
@@ -974,7 +985,7 @@ test("reflects on a draft and revises it before returning", async () => {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       reflectionMode: true,
-      messages: [{ role: "user", content: "Give me a checked answer." }],
+      messages: [{ role: "user", content: "Analyze the evidence and give me a checked answer." }],
     }),
   });
   const response = await worker.fetch(request, env);
@@ -983,7 +994,7 @@ test("reflects on a draft and revises it before returning", async () => {
   assert.equal(data.response, "The corrected final answer.");
   assert.deepEqual(data.reflection, { used: true, revised: true, uncertain: false });
   assert.equal(calls.length, 3);
-  assert.equal(calls[1].model, "@cf/meta/llama-3.2-3b-instruct");
+  assert.equal(calls[1].model, "@cf/zai-org/glm-4.7-flash");
 });
 
 test("routes supported image input through the vision model", async () => {
@@ -1012,7 +1023,7 @@ test("routes supported image input through the vision model", async () => {
   const response = await worker.fetch(request, env);
   const data = await response.json();
   assert.equal(response.status, 200);
-  assert.equal(selectedModel, "@cf/meta/llama-3.2-11b-vision-instruct");
+  assert.equal(selectedModel, "@cf/meta/llama-4-scout-17b-16e-instruct");
   assert.equal(image, "iVBORw0KGgo=");
   assert.deepEqual(data.toolsUsed, ["vision"]);
 });
@@ -1060,6 +1071,27 @@ test("rejects unconfigured web research clearly", async () => {
   const data = await response.json();
   assert.equal(response.status, 502);
   assert.match(data.error, /SEARXNG_URL is not configured/);
+});
+
+test("keeps ordinary chat working when optional SearXNG research is unavailable", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      webSearch: true,
+      reflectionMode: false,
+      messages: [{ role: "user", content: "Explain a stable concept." }],
+    }),
+  });
+  const response = await worker.fetch(request, {
+    ...AUTH_ENV,
+    AI: { async run() { return { response: "The core explanation is available." }; } },
+  });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.response, "The core explanation is available.");
+  assert.ok(data.toolsUsed.includes("web_search_unavailable"));
+  assert.match(data.warnings[0], /without live SearXNG evidence/);
 });
 
 test("Knowledge Update Agent requires Cloudflare AI and never falls back to automatic memory", async () => {
@@ -1141,7 +1173,7 @@ test("Knowledge Update Agent cross-checks two domains and returns only critic-ap
     assert.match(aiCalls[1].input.messages[0].content, /untrusted data/);
     assert.equal(aiCalls[0].input.response_format.type, "json_schema");
     assert.equal(aiCalls[1].input.response_format.type, "json_schema");
-    assert.match(aiCalls[0].model, /llama-3\.1-8b-instruct-fast/);
+    assert.match(aiCalls[0].model, /glm-4\.7-flash/);
     assert.doesNotMatch(JSON.stringify(data), /memoryId|automatically saved/i);
   } finally {
     globalThis.fetch = originalFetch;
@@ -1286,7 +1318,126 @@ test("logout clears the secure browser session", async () => {
   assert.match(response.headers.get("set-cookie"), /Max-Age=0/);
 });
 
+test("reads current OpenAI-compatible Cloudflare choice responses", async () => {
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ messages: [{ role: "user", content: "Hello JARVIS" }] }),
+  });
+  const response = await worker.fetch(request, {
+    ...AUTH_ENV,
+    AI: { async run() { return { choices: [{ message: { content: "At your service." } }] }; } },
+  });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.response, "At your service.");
+  assert.equal(data.modelKey, "balanced");
+});
+
+test("uses only safe temporary-model fallback routes and exposes the actual route", async () => {
+  const calls = [];
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      reasoningPower: "max",
+      reflectionMode: false,
+      messages: [{ role: "user", content: "Analyze this architecture." }],
+    }),
+  });
+  const response = await worker.fetch(request, {
+    ...AUTH_ENV,
+    AI: {
+      async run(model) {
+        calls.push(model);
+        if (calls.length === 1) throw new Error("model temporarily unavailable");
+        return { response: "Fallback completed." };
+      },
+    },
+  });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.response, "Fallback completed.");
+  assert.equal(data.modelKey, "balanced");
+  assert.deepEqual(data.route, ["reasoning", "balanced"]);
+  assert.ok(data.toolsUsed.includes("model_fallback"));
+  assert.deepEqual(calls, ["@cf/openai/gpt-oss-120b", "@cf/zai-org/glm-4.7-flash"]);
+});
+
+test("does not hide free-allocation failures behind model fallback", async () => {
+  let calls = 0;
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ reasoningPower: "max", messages: [{ role: "user", content: "Analyze this." }] }),
+  });
+  const response = await worker.fetch(request, {
+    ...AUTH_ENV,
+    AI: { async run() { calls += 1; throw new Error("quota allocation exhausted 3036"); } },
+  });
+  assert.equal(response.status, 429);
+  assert.equal(calls, 1);
+  assert.match((await response.json()).error, /resets at 00:00 UTC/);
+});
+
+test("adaptive reflection avoids extra free calls for trivial chat", async () => {
+  let calls = 0;
+  const request = await authorizedRequest("https://jarvis.test/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ reflectionMode: true, reasoningPower: "max", messages: [{ role: "user", content: "Hello" }] }),
+  });
+  const response = await worker.fetch(request, {
+    ...AUTH_ENV,
+    AI: { async run() { calls += 1; return { response: "Hello, sir." }; } },
+  });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(calls, 1);
+  assert.deepEqual(data.reflection, { used: false, revised: false, uncertain: false });
+});
+
+test("globally fits recent conversation content inside the selected budget", () => {
+  const messages = Array.from({ length: 8 }, (_, index) => ({
+    role: index % 2 ? "assistant" : "user",
+    content: String(index).repeat(5_000),
+  }));
+  const fitted = fitConversationMessages(messages, 8, 12_000);
+  assert.ok(fitted.reduce((total, message) => total + message.content.length, 0) <= 12_000);
+  assert.equal(fitted.at(-1).content[0], "7");
+  assert.equal(fitted.length, 3);
+});
+
+test("runs an authenticated live Unified Brain self-check", async () => {
+  const unauthorized = await worker.fetch(new Request("https://jarvis.test/api/brain-check", { method: "POST", body: "{}" }), AUTH_ENV);
+  assert.equal(unauthorized.status, 401);
+  const request = await authorizedRequest("https://jarvis.test/api/brain-check", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{}",
+  });
+  const response = await worker.fetch(request, {
+    ...AUTH_ENV,
+    JARVIS_VECTORIZE: { async query() { return { matches: [] }; } },
+    AI: {
+      async run() { return { choices: [{ message: { content: "READY" } }] }; },
+      async toMarkdown() { return []; },
+    },
+  });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.build, "1.15.0");
+  assert.equal(data.status, "ready");
+  assert.equal(data.live.ok, true);
+  assert.equal(data.bindings.cloudflareAI, true);
+  assert.equal(data.bindings.documentConversion, true);
+  assert.equal(data.bindings.semanticMemory, true);
+  assert.equal(data.context.globallyBudgeted, true);
+  assert.equal(data.freePolicy.paidOnlyRoutesEnabled, false);
+  assert.match(data.models.reasoning, /gpt-oss-120b/);
+});
+
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.14.1", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.15.0", ai: false });
 });

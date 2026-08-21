@@ -51,7 +51,7 @@ jobs:
             enabled = $true
             version = $version
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
-            notes = "JARVIS $version fixes chat delivery by pausing cloud synchronization during generation, writing each result back to the live conversation, and limiting startup recovery notices to genuinely interrupted requests. All existing AI, voice, memory, research, file, Windows, updater, and confirmation functions remain available."
+            notes = "JARVIS $version adds the Free-Max Unified Brain with current Cloudflare general, reasoning, coding, and vision routes, safe temporary-model fallback, global context budgeting, adaptive reflection, and a live /aicheck diagnostic. The reliable chat-delivery protections and all existing voice, memory, research, file, Windows, updater, and confirmation functions remain available."
             installers = [ordered]@{
               exe = [ordered]@{ url = "$base/$($exe.Name)"; sha256 = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
               msi = [ordered]@{ url = "$base/$($msi.Name)"; sha256 = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
