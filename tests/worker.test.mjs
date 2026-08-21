@@ -75,7 +75,7 @@ test("shows the responsive JARVIS login page before authentication", async () =>
   assert.match(html, /JARVIS security interface online/);
   assert.match(html, /ACCESS GRANTED — WELCOME, SIR/);
   assert.match(html, /tone\(false\)/);
-  assert.match(html, /BUILD 1\.14\.0/);
+  assert.match(html, /BUILD 1\.14\.1/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /serviceWorker/);
 });
@@ -123,14 +123,14 @@ test("blocks protected APIs without a valid session", async () => {
 
 test("publishes a public desktop update endpoint without exposing credentials", async () => {
   const health = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.equal((await health.json()).build, "1.14.0");
+  assert.equal((await health.json()).build, "1.14.1");
 
   const response = await worker.fetch(new Request("https://jarvis.test/api/desktop-update"), AUTH_ENV);
   const manifest = await response.json();
   assert.equal(response.status, 200);
   assert.equal(manifest.schema, 1);
   assert.equal(manifest.enabled, false);
-  assert.equal(manifest.websiteBuild, "1.14.0");
+  assert.equal(manifest.websiteBuild, "1.14.1");
   assert.doesNotMatch(JSON.stringify(manifest), /TestOnly#Pass123|session-secret/);
 
   const head = await worker.fetch(new Request("https://jarvis.test/api/desktop-update", { method: "HEAD" }), AUTH_ENV);
@@ -224,7 +224,7 @@ test("renders the JARVIS home interface after authentication", async () => {
   assert.match(html, /GETTING STARTED TUTORIALS/);
   assert.match(html, /function helpGuideMarkdown/);
   assert.match(html, /function renderHelpCenter/);
-  assert.match(html, /JARVIS-Help-Guide-1\.14\.0\.md/);
+  assert.match(html, /JARVIS-Help-Guide-1\.14\.1\.md/);
   assert.match(html, /\/tutorial/);
   assert.match(html, /id="missionControlEnabled"/);
   assert.match(html, /id="screenVisionEnabled"/);
@@ -305,17 +305,17 @@ test("documents the complete Knowledge Update Agent workflow in the Help Center"
   assert.match(html, /CONFIGURE_KNOWLEDGE_AGENT\.bat/);
   assert.match(html, /Web research versus knowledge learning/);
   assert.match(html, /Rejected or unselected findings are never saved/);
-  assert.match(html, /Version 1\.14\.0/);
+  assert.match(html, /Version 1\.14\.1/);
 });
 
-test("documents the v1.14.0 unified Cloudflare upgrade and complete response workflow", async () => {
+test("documents the v1.14.1 reliable chat-delivery upgrade and complete response workflow", async () => {
   const request = await authorizedRequest("https://jarvis.test/");
   const response = await worker.fetch(request, AUTH_ENV);
   const html = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(html, /VERSION 1\.14\.0/);
-  assert.match(html, /Version 1\.14\.0 unified provider cleanup/);
+  assert.match(html, /VERSION 1\.14\.1/);
+  assert.match(html, /Version 1\.14\.1 reliable chat delivery/);
   assert.match(html, /Generate and copy code/);
   assert.match(html, /Test Unified JARVIS Brain/);
   assert.match(html, /Built-in Cloudflare AI/);
@@ -325,8 +325,15 @@ test("documents the v1.14.0 unified Cloudflare upgrade and complete response wor
   assert.match(html, /Natural requests plus slash commands/);
   assert.match(html, /name:"\/clear"/);
   assert.match(html, /function recoverInterruptedReplies/);
-  assert.doesNotMatch(html, /last\.createdAt\|\|0\)>8000/);
-  assert.match(html, /function render\(\)\{if\(!state\.sending&&recoverInterruptedReplies\(\)\)saveLocalOnly\(\)/);
+  assert.match(html, /last\.role==="user"&&last\.requestPending===true/);
+  assert.match(html, /requestPending:m\.requestPending===true/);
+  assert.match(html, /requestPending:true/);
+  assert.match(html, /pendingMessage\.requestPending=false/);
+  assert.match(html, /failedPending\.requestPending=false/);
+  assert.match(html, /state\.conversations\.find\(function\(item\)\{return item\.id===conversationId\}\)\|\|current\(\)/);
+  assert.match(html, /if\(state\.sending\)\{scheduleSync\(1200\);return\}/);
+  assert.doesNotMatch(html, /function render\(\)\{[^}]*recoverInterruptedReplies/);
+  assert.match(html, /Only a request carrying a real pending marker at startup/);
 });
 
 test("includes installable website and Windows desktop-app script assets", async () => {
@@ -346,7 +353,7 @@ test("includes installable website and Windows desktop-app script assets", async
   assert.match(installer, /Install-Jarvis\.ps1/);
   assert.match(powershellInstaller, /--app=/);
   assert.match(powershellInstaller, /Microsoft\\Edge/);
-  assert.match(powershellInstaller, /DisplayVersion -Value "1\.14\.0"/);
+  assert.match(powershellInstaller, /DisplayVersion -Value "1\.14\.1"/);
   assert.match(powershellInstaller, /Desktop/);
   assert.match(powershellInstaller, /Start Menu/);
   assert.match(powershellInstaller, /UninstallString/);
@@ -381,7 +388,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   const workflow = await readFile(new URL("../.github/workflows/build-windows-installers.yml", import.meta.url), "utf8");
   const wakeWordScript = await readFile(new URL("../desktop/wake-word-listener.ps1", import.meta.url), "utf8");
 
-  assert.equal(desktopPackage.version, "1.14.0");
+  assert.equal(desktopPackage.version, "1.14.1");
   assert.equal(desktopPackage.dependencies["ag-psd"], "31.0.2");
   assert.equal(desktopPackage.dependencies.jszip, "3.10.1");
   assert.equal(desktopPackage.devDependencies.electron, "43.4.0");
@@ -1281,5 +1288,5 @@ test("logout clears the secure browser session", async () => {
 
 test("provides a public health endpoint", async () => {
   const response = await worker.fetch(new Request("https://jarvis.test/api/health"), AUTH_ENV);
-  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.14.0", ai: false });
+  assert.deepEqual(await response.json(), { service: "JARVIS", status: "online", build: "1.14.1", ai: false });
 });

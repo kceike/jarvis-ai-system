@@ -126,8 +126,8 @@ The previous custom `JARVIS_Setup.exe` has been withdrawn because it was not acc
 
 The complete project now includes a secure Electron desktop wrapper and standard installer configurations. On a Windows PC with Node.js 22 LTS, double-click `BUILD_WINDOWS_INSTALLERS.bat`. It tests the desktop wrapper and builds:
 
-- `desktop\dist\JARVIS-AI-Setup-1.14.0-x64.exe` — the recommended assisted NSIS installer.
-- `desktop\dist\JARVIS-AI-1.14.0-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
+- `desktop\dist\JARVIS-AI-Setup-1.14.1-x64.exe` — the recommended assisted NSIS installer.
+- `desktop\dist\JARVIS-AI-1.14.1-x64.msi` — a WiX/MSI package for SCCM, Intune, Group Policy, and silent deployment.
 
 The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose **JARVIS → Change website address** to replace it later. The remote page runs with Electron Node integration disabled, context isolation and Chromium sandboxing enabled, and external links restricted to the system browser. The native bridge validates the configured JARVIS origin, accepts only fixed Windows targets or applications returned by Windows itself, and shows a native confirmation before every computer action.
 
@@ -135,7 +135,7 @@ The first launch asks for the live JARVIS HTTPS address. Press `Alt` and choose 
 
 Native computer controls require the genuine Electron EXE/MSI. They are intentionally unavailable in the normal browser, Progressive Web App, and lightweight BAT/Edge app because web pages must not receive unrestricted access to local programs.
 
-Version 1.14.0 removes the optional Google provider at the owner's request and routes the Unified JARVIS Brain through built-in Cloudflare Workers AI, with optional local Ollama fallback in the genuine Windows app. Every non-Google function from v1.13.9 remains: natural and slash commands, coding, vision, voice, wake phrase, files and Office/PSD analysis, memory/RAG, sync, reflection, research, Mission Control, Windows tools, and verified updates. Legacy saved provider settings migrate to Unified automatically. Every normal answer remains in chat and is spoken while Automatic voice response is enabled. All confirmations and permission boundaries remain enforced.
+Version 1.14.1 fixes the recurring false interrupted-request response. Encrypted cloud sync now waits while an AI answer is being generated, the finished result is attached to the live conversation by ID, and startup recovery runs only for a request that was genuinely pending when JARVIS closed or reloaded. JARVIS continues to use built-in Cloudflare Workers AI with optional local Ollama fallback in the genuine Windows app. Natural and slash commands, coding, vision, voice, wake phrase, files and Office/PSD analysis, memory/RAG, sync, reflection, research, Mission Control, Windows tools, and verified updates remain available. Every normal answer remains in chat and is spoken while Automatic voice response is enabled.
 
 - `/mission [goal]` — create a 2–8 step plan. Model-generated commands are filtered through a strict allowlist; power, IoT, shell, install, delete, registry, credential, and bypass commands are rejected.
 - `/missions` — open the responsive Mission Control dashboard and review, run, complete, skip, pause, resume, or cancel steps.
