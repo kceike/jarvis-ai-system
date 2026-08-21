@@ -503,6 +503,7 @@ test("includes a standard secure EXE and MSI build project", async () => {
   assert.match(githubUploadBatch, /!gh auth git-credential/);
   assert.match(githubUploadBatch, /git reset --mixed origin\/main/);
   assert.match(githubUploadBatch, /git add --ignore-removal/);
+  assert.match(githubUploadBatch, /git rm -f --ignore-unmatch CONFIGURE_GEMINI_API\.bat/);
   assert.match(githubUploadBatch, /jarvis-local-safety-backup/);
   assert.match(githubUploadBatch, /git restore --worktree/);
   assert.match(workflow, /runs-on: windows-latest/);

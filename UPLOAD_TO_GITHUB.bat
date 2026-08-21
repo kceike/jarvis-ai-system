@@ -191,6 +191,12 @@ if defined JARVIS_ADOPTED_REMOTE_HISTORY (
 )
 if errorlevel 1 goto :failed
 
+rem Version 1.14.0 intentionally retires the old external-provider helper.
+rem Fresh ZIP uploads preserve unrelated GitHub-only files, so stage this one
+rem explicit deletion after the safe overlay instead of deleting broadly.
+git rm -f --ignore-unmatch CONFIGURE_GEMINI_API.bat >nul 2>nul
+if errorlevel 1 goto :failed
+
 for /f "delims=" %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "JARVIS_UPLOAD_TIME=%%T"
 git diff --cached --quiet
 if errorlevel 1 (
