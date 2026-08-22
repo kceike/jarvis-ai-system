@@ -1,9 +1,9 @@
 # Build the genuine JARVIS EXE and MSI
 
-JARVIS 1.15.0 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
+JARVIS 1.15.1 includes a secure Electron desktop wrapper and standard electron-builder configurations for two Windows formats:
 
-- `JARVIS-AI-Setup-1.15.0-x64.exe` — assisted NSIS installer for normal personal installation.
-- `JARVIS-AI-1.15.0-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
+- `JARVIS-AI-Setup-1.15.1-x64.exe` — assisted NSIS installer for normal personal installation.
+- `JARVIS-AI-1.15.1-x64.msi` — WiX/MSI installer for IT deployment, SCCM, Intune, Group Policy, and standard `/quiet` or `/passive` installation.
 
 These files must be compiled on a real Windows build runner. They are not hand-crafted PE files.
 
@@ -19,7 +19,7 @@ The first launch asks for the complete HTTPS address of your deployed JARVIS Clo
 
 The EXE/MSI edition is required for `/controlpanel`, `/apps`, `/app [name]`, `/tools`, `/folders`, `/diagnostics`, `/pc`, and confirmed native Windows Settings commands. Install version 1.10.0 or later once to add the updater; versions that predate the updater cannot install it themselves.
 
-Version 1.15.0 uses the built-in Cloudflare AI binding for the Free-Max Unified Brain and retains optional local Ollama fallback for supported text work in the genuine Windows app. It adds current model routing, safe fallback, global context budgeting, adaptive reflection, and `/aicheck`, while preserving the cross-device sync race fix and every earlier desktop capability and safety confirmation.
+Version 1.15.1 uses the built-in Cloudflare AI binding for the Free-Max Unified Brain and retains optional local Ollama fallback for supported text work in the genuine Windows app. It adds account-bound per-route `/aicheck` diagnostics and sanitized Cloudflare errors while preserving current routing, safe fallback, global context budgeting, adaptive reflection, the cross-device sync race fix, and every earlier desktop capability and safety confirmation.
 
 ## Build with GitHub Actions
 

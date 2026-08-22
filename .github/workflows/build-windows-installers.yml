@@ -51,7 +51,7 @@ jobs:
             enabled = $true
             version = $version
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
-            notes = "JARVIS $version adds the Free-Max Unified Brain with current Cloudflare general, reasoning, coding, and vision routes, safe temporary-model fallback, global context budgeting, adaptive reflection, and a live /aicheck diagnostic. The reliable chat-delivery protections and all existing voice, memory, research, file, Windows, updater, and confirmation functions remain available."
+            notes = "JARVIS $version adds account-bound per-route brain diagnostics, sanitized Cloudflare errors, and correct access-versus-allocation reporting while retaining the Free-Max Unified Brain, safe fallback, global context budgeting, adaptive reflection, reliable chat delivery, and all existing voice, memory, research, file, Windows, updater, and confirmation functions."
             installers = [ordered]@{
               exe = [ordered]@{ url = "$base/$($exe.Name)"; sha256 = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
               msi = [ordered]@{ url = "$base/$($msi.Name)"; sha256 = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }

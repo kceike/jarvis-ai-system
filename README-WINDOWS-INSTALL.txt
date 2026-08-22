@@ -1,4 +1,4 @@
-JARVIS AI - WINDOWS INSTALLER 1.15.0
+JARVIS AI - WINDOWS INSTALLER 1.15.1
 ===================================
 
 This package does not contain the previous broken JARVIS_Setup.exe.
@@ -9,10 +9,10 @@ below remains the smallest option and does not need to download Electron.
 
 IMPORTANT
 Native Windows Settings, Control Panel, and installed-app launch commands require
-the genuine version 1.15.0 EXE/MSI. The BAT/PWA method remains web-sandboxed and
+the genuine version 1.15.1 EXE/MSI. The BAT/PWA method remains web-sandboxed and
 cannot open local installed programs.
 
-Version 1.15.0 adds the Free-Max Unified Brain with current general, reasoning,
+Version 1.15.1 retains the Free-Max Unified Brain with current general, reasoning,
 coding, and vision routes, safe temporary-model fallback, global context
 budgeting, adaptive reflection, and the live /aicheck diagnostic. Optional local
 Ollama fallback remains available for supported text requests in the Windows app.

@@ -13,7 +13,7 @@ const EMBEDDING_MODEL = "@cf/baai/bge-small-en-v1.5";
 const KNOWLEDGE_JSON_MODEL = "@cf/zai-org/glm-4.7-flash";
 const SPEECH_MODEL = "@cf/openai/whisper-large-v3-turbo";
 const TTS_MODEL = "@cf/myshell-ai/melotts";
-const BUILD_VERSION = "1.15.0";
+const BUILD_VERSION = "1.15.1";
 const CONTEXT_CHARACTER_BUDGETS = Object.freeze([32_000, 64_000, 120_000]);
 const FREE_TEXT_FALLBACKS = Object.freeze({
   eco: ["eco", "code", "fast"],
@@ -174,7 +174,7 @@ const HTML = String.raw`<!doctype html>
       <div class="settings-head"><div><small>COMMANDS · FUNCTIONS · TUTORIALS</small><h2>JARVIS HELP CENTER</h2></div><button id="closeHelp" aria-label="Close Help Center">×</button></div>
       <div class="help-toolbar"><label class="help-search"><span>⌕</span><input id="helpSearch" type="search" placeholder="Search commands, functions, or tutorials…" autocomplete="off"></label><button id="copyHelp" type="button">COPY GUIDE</button><button id="saveHelp" type="button">SAVE GUIDE (.MD)</button></div>
       <div class="help-scroll" id="helpScroll">
-        <div class="help-summary"><strong>COMPLETE OFFLINE GUIDE · VERSION 1.15.0</strong><br>The Free-Max Unified Brain now uses current Cloudflare chat, reasoning, code, and vision routes, safe temporary-model fallback, global context budgeting, adaptive reflection, and a live self-check. Optional local Ollama and every existing command, skill, voice, memory, research, file, and Windows function remain available.</div>
+        <div class="help-summary"><strong>COMPLETE OFFLINE GUIDE · VERSION 1.15.1</strong><br>The Free-Max Unified Brain uses current Cloudflare chat, reasoning, code, and vision routes, safe fallback, global context budgeting, adaptive reflection, and an account-bound route-matrix self-check with sanitized Cloudflare diagnostics. Optional local Ollama and every existing command, skill, voice, memory, research, file, and Windows function remain available.</div>
         <div class="help-content" id="helpContent"></div>
       </div>
     </section>
@@ -191,7 +191,7 @@ const HTML = String.raw`<!doctype html>
         {title:"GETTING STARTED TUTORIALS",items:[
           {name:"First conversation",description:"1. Select JARVIS for general assistance or COPILOT for coding.\n2. Type a request in the composer.\n3. Press Enter or SEND. Use Shift+Enter for a new line.\n4. Rate a useful answer or correct it so Memory Vault can personalize later."},
           {name:"Generate and copy code",description:"1. Type a natural request such as ‘Create a responsive HTML login page and return the complete code.’\n2. JARVIS automatically identifies it as a coding task; selecting COPILOT first is optional.\n3. Wait while the visible status moves through provider selection, generation, and optional self-correction.\n4. The answer appears in chat inside a labeled code block. Select COPY on the code block or COPY under the complete message.\n5. Automatic voice response speaks the reply within the configured speech limit while the complete code remains visible in chat."},
-          {name:"Test Unified JARVIS Brain",description:"1. Open Settings → AI Core and select Unified JARVIS Brain.\n2. Select ACTIVATE FREE-MAX UNIFIED BRAIN; the configuration saves automatically.\n3. Select RUN COMPLETE JARVIS SELF-CHECK or type /aicheck. A real live Cloudflare inference checks the brain route, while the report also identifies sync, RAG, research, document conversion, Windows-link, and updater configuration.\n4. Start a new transmission and ask for a short explanation, a complete HTML code sample, and an image in separate requests.\n5. Optional modules marked not configured do not stop normal chat. Quota and account errors remain visible instead of being hidden by fallback."},
+          {name:"Test Unified JARVIS Brain",description:"1. Open Settings → AI Core and select Unified JARVIS Brain.\n2. Select ACTIVATE FREE-MAX UNIFIED BRAIN; the configuration saves automatically.\n3. Select RUN COMPLETE JARVIS SELF-CHECK or type /aicheck. JARVIS tests the account-bound general, code, reasoning, and vision-text routes separately, then reports the exact sanitized error classification and Cloudflare code for any failed route.\n4. The check also identifies sync, RAG, research, document conversion, Windows-link, and updater configuration.\n5. READY means every route passed. DEGRADED with at least one ready route means JARVIS can continue through fallback. NOT REACHED means Cloudflare rejected inference before a model responded."},
           {name:"Create and run a mission",description:"1. Select MISSIONS or type /mission followed by a goal.\n2. Review every generated step and its risk.\n3. Select RUN only for the step you approve.\n4. Windows actions still display their own confirmation.\n5. Mark manual work DONE, or pause, skip, or cancel the mission."},
           {name:"Analyze the screen",description:"1. Type /screen followed by your question.\n2. Approve one capture in the desktop app, or choose a screen in the browser picker.\n3. JARVIS sends the reduced single image to its built-in Cloudflare vision model.\n4. Continuous recording remains off."},
           {name:"Windows IT health check",description:"1. Use the genuine EXE/MSI.\n2. Type /itcheck.\n3. Confirm the read-only diagnostic collection.\n4. JARVIS analyzes Windows, network, storage, services, and recent System events.\n5. Review recommendations; no repair runs automatically."},
@@ -200,12 +200,12 @@ const HTML = String.raw`<!doctype html>
           {name:"Synchronize devices",description:"1. Enable encrypted synchronization in Settings.\n2. Sign in with the same JARVIS account on another device.\n3. Select SYNC ALL DEVICES NOW when needed.\n4. Conversations, settings, corrections, missions, and supported memories merge securely."},
           {name:"Install and update",description:"Website/PWA: select INSTALL APP when available.\nWindows EXE/MSI: build through GitHub Actions and install once. The app checks for a higher verified release at startup and every six hours. Website-only changes arrive after Cloudflare deployment without reinstalling."},
           {name:"Enable Hey JARVIS",description:"1. Open Settings → Voice and Response.\n2. Enable Always listen for ‘Hey JARVIS’ and save.\n3. Approve microphone access if Edge or Chrome asks.\n4. Wait for the visible HEY JARVIS ARMED indicator.\n5. Say ‘Hey Jarvis’ and then your request, or say both in one sentence.\n6. In the Windows EXE/MSI, minimizing hides JARVIS in the system tray and keeps the native listener active. The wake phrase restores JARVIS to the front.\n7. Disable the switch or exit JARVIS to stop the listener immediately."},
-          {name:"Save this complete guide",description:"Select SAVE GUIDE (.MD) at the top. JARVIS stores a local offline copy and downloads JARVIS-Help-Guide-1.15.0.md. Open it in Notepad, VS Code, Word, or any Markdown reader."}
+          {name:"Save this complete guide",description:"Select SAVE GUIDE (.MD) at the top. JARVIS stores a local offline copy and downloads JARVIS-Help-Guide-1.15.1.md. Open it in Notepad, VS Code, Word, or any Markdown reader."}
         ]},
         {title:"AI, CHAT, AND VOICE COMMANDS",items:[
           {name:"/help",description:"Open this complete Help Center.",example:"/help"},
           {name:"/tutorial",description:"Open the tutorials and command guide.",example:"/tutorial"},
-          {name:"/aicheck",description:"Run an authenticated live Cloudflare model probe and report Unified Brain, document conversion, encrypted sync, semantic RAG, SearXNG research, Windows desktop link, updater, context-budget, and free-route policy status. Optional modules may be unconfigured without blocking ordinary chat.",example:"/aicheck"},
+          {name:"/aicheck",description:"Run authenticated account-bound probes for the general, code, reasoning, and vision-text routes. The report shows each route's model, latency, sanitized Cloudflare error classification/code, plus document conversion, encrypted sync, semantic RAG, SearXNG research, Windows link, updater, context budget, and free-route policy. The public Playground is not used.",example:"/aicheck"},
           {name:"/new",description:"Start a new transmission without removing the New Conversation function.",example:"/new"},
           {name:"/clear",description:"Clear the messages in the current transmission. This does not remove the New Conversation function, other saved conversations, or Memory Vault.",example:"/clear"},
           {name:"/remember [fact]",description:"Save an approved fact or preference in Memory Vault.",example:"/remember I prefer direct technical explanations"},
@@ -243,7 +243,7 @@ const HTML = String.raw`<!doctype html>
         ]},
         {title:"ADVANCED INTELLIGENCE AND MULTIMODAL COMMANDS",items:[
           {name:"Version 1.14.0 unified provider cleanup",description:"JARVIS uses built-in Cloudflare AI with optional local Ollama fallback. Vision, voice, wake phrase, memory/RAG, sync, research, file analysis, Mission Control, Windows tools, updater, natural commands, and every slash command remain available."},
-          {name:"Version 1.15.0 Free-Max Unified Brain",description:"JARVIS now directs general work to GLM 4.7 Flash, maximum reasoning to GPT-OSS 120B, coding to Qwen3 30B, and image/screen analysis to Llama 4 Scout. Temporary model failures use a safe built-in fallback cascade, while quota, billing, authentication, and permission failures remain visible. A global 32K/64K/120K character budget covers conversation, files, memory, RAG, and research together. Adaptive reflection reviews code and complex work without wasting extra calls on greetings. Type /aicheck for a live end-to-end brain diagnostic."},
+          {name:"Version 1.15.1 Account-Bound Brain Diagnostics",description:"JARVIS directs general work to GLM 4.7 Flash, maximum reasoning to GPT-OSS 120B, coding to Qwen3 30B, and image/screen analysis to Llama 4 Scout. The new route matrix tests all four through the deployed Worker binding, distinguishes allocation, rate-limit, billing, access, timeout, model, and unknown failures, and safely displays the real Cloudflare code. Model-specific access errors may use another built-in free route; account-wide allocation, rate, and billing errors stop immediately."},
           {name:"Natural Language Intent Director",description:"Speak or type normal requests without slash commands. JARVIS identifies the intended skill, extracts its target, and routes it through the same protected command handler. Slash commands remain optional diagnostic shortcuts. Ambiguous or sensitive actions are never silently executed."},
           {name:"Unified JARVIS Brain",description:"Select Unified JARVIS Brain or press ACTIVATE FREE-MAX UNIFIED BRAIN. Natural requests are classified as chat, code, image, research, file learning, screen vision, or protected tools. Free-Max Director chooses the current built-in Cloudflare general, code, reasoning, and vision routes and can retry a different built-in free route only for a temporary model failure. In the genuine Windows app, Unified mode can then try configured local Ollama for supported text work. Manual Cloudflare-only and Ollama-only overrides remain under Advanced AI Overrides."},
           {name:"Built-in Cloudflare AI",description:"No third-party API key is needed. Cloudflare Workers AI powers GLM 4.7 Flash general chat, GPT-OSS 120B reasoning, Qwen3 30B coding, Llama 4 Scout vision, Deep Research, Knowledge Update Generator/Critic, adaptive Generator → Critic → Revision, BGE semantic embeddings, Whisper transcription, MeloTTS voice, and FLUX image synthesis. Only free-allocation-compatible routes are enabled; paid-only model routes are excluded."},
@@ -299,7 +299,7 @@ const HTML = String.raw`<!doctype html>
           {name:"Progressive Web App",description:"Installable website with standalone display, icons, and safe offline connection messaging."},
           {name:"Windows EXE and MSI",description:"Secure Electron shell linked to the live Cloudflare site with origin-validated, allowlisted native IPC functions."},
           {name:"Verified automatic updater",description:"Checks the linked site, downloads a higher GitHub release over HTTPS, verifies SHA-256, and opens the visible installer when approved."},
-          {name:"Function-retention policy",description:"Updates are additive unless a function is unsafe, retired by its provider, broken, or explicitly requested for removal. Version 1.15.0 replaces outdated model routes while preserving every command, smart skill, voice feature, memory function, file analyzer, desktop tool, updater, natural-language route, slash command, and safety boundary. Help Center entries are tested against their command and feature markers before release."},
+          {name:"Function-retention policy",description:"Updates are additive unless a function is unsafe, retired by its provider, broken, or explicitly requested for removal. Version 1.15.1 keeps the Free-Max routes and adds exact account-bound route diagnostics while preserving every command, smart skill, voice feature, memory function, file analyzer, desktop tool, updater, natural-language route, slash command, and safety boundary. Help Center entries are tested against their command and feature markers before release."},
           {name:"Safety confirmations",description:"Native computer actions are user-visible. Mission Control never bypasses downstream confirmation. Arbitrary chat text is not executed as CMD or PowerShell."},
           {name:"Export and save",description:"Export the current conversation as Markdown. Copy messages or code, download generated images, and save this complete Help Guide."},
           {name:"Privacy controls",description:"Disable individual Smart Skills, clear Memory Vault, disable sync, stop speech, and cancel screen capture or PC actions."}
@@ -365,7 +365,7 @@ const HTML = String.raw`<!doctype html>
       async function createMissionPlan(goal,displayPrompt){goal=String(goal||"").trim();if(!goal){toast("Describe the mission goal first.");return}if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in the Skills Dashboard.");return}var c=current(),prompt=displayPrompt||"Create a mission plan: "+goal,now=Date.now();closeMissionControl();chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:prompt,createdAt:now});if(c.messages.length===1)c.title=goal.replace(/\s+/g," ").slice(0,48);c.updatedAt=now;state.sending=true;save();render();try{var data=await postJson("/api/mission-plan",{goal:goal,userTitle:state.settings.title,memory:await memorySearch(goal)}),mission=cleanMission(data.mission);if(!mission||!mission.steps.length)throw new Error("Mission Control returned no usable steps.");c.messages.push({id:id("msg"),role:"assistant",content:"**MISSION PLAN READY**\n"+(mission.summary||"Review each step below. JARVIS will not execute a computer action without your approval."),mission:mission,createdAt:Date.now()});c.updatedAt=Date.now();if(state.settings.autoSpeak)speak("Mission plan ready, "+(state.settings.title||"sir")+". Review the steps before execution.")}catch(error){c.messages.push({id:id("msg"),role:"assistant",content:"Mission Control could not create the plan. "+error.message,createdAt:Date.now()})}finally{state.sending=false;save();render()}}
       function openMissionControl(){if(!state.settings.missionControlEnabled){toast("Mission Control is disabled in Settings.");return}q("#missionModal").classList.add("open");renderMissionDashboard();requestAnimationFrame(function(){q("#missionGoal").focus()})}
       function closeMissionControl(){q("#missionModal").classList.remove("open")}
-      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.15.0","","Complete commands, functions, models, diagnostics, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
+      function helpGuideMarkdown(){var lines=["# JARVIS Help Guide","","Version 1.15.1","","Complete commands, functions, models, diagnostics, and tutorials. Computer actions always retain their required confirmations.",""],tick=String.fromCharCode(96);HELP_SECTIONS.forEach(function(section){lines.push("## "+section.title,"");section.items.forEach(function(item){lines.push("### "+item.name,"",item.description,"");if(item.example)lines.push("Example: "+tick+item.example+tick,"")})});return lines.join("\n")}
       function renderHelpCenter(search){var term=String(search||"").trim().toLowerCase(),sections=HELP_SECTIONS.map(function(section){var items=section.items.filter(function(item){return!term||(section.title+" "+item.name+" "+item.description+" "+(item.example||"")).toLowerCase().includes(term)});return{title:section.title,items:items}}).filter(function(section){return section.items.length});q("#helpContent").innerHTML=sections.length?sections.map(function(section){return'<section class="help-section"><h3>'+esc(section.title)+'</h3><div class="help-items">'+section.items.map(function(item){return'<article class="help-item"><h4>'+esc(item.name)+'</h4><p>'+esc(item.description)+'</p>'+(item.example?'<code>'+esc(item.example)+'</code><button class="help-run" data-help-command="'+esc(item.example)+'">LOAD EXAMPLE</button>':"")+'</article>'}).join("")+'</div></section>'}).join(""):'<div class="help-empty">No command, function, or tutorial matched that search.</div>';qa("[data-help-command]").forEach(function(button){button.onclick=function(){q("#input").value=button.dataset.helpCommand;inputChanged();closeHelpCenter();q("#input").focus();toast("Example loaded. Review it, then press Send when ready.")}})}
       function openHelpCenter(){closeMissionControl();closeSettings();q("#helpSearch").value="";renderHelpCenter("");q("#helpScroll").scrollTop=0;q("#helpModal").classList.add("open");requestAnimationFrame(function(){q("#helpSearch").focus()})}
       function closeHelpCenter(){q("#helpModal").classList.remove("open")}
@@ -377,7 +377,7 @@ const HTML = String.raw`<!doctype html>
       async function approveKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft||!Array.isArray(draft.proposals))return;var selected=Array.from(qa(".knowledge-choice:checked")).map(function(input){return Number(input.dataset.index)}).filter(function(index){return Number.isInteger(index)&&draft.proposals[index]});if(!selected.length){toast("Select at least one verified proposal to approve.");return}var now=Date.now(),approved=selected.map(function(index){var proposal=draft.proposals[index],sources=Array.isArray(proposal.sources)?proposal.sources:[],sourceLines=sources.map(function(source){return"- "+String(source.title||"Source").slice(0,300)+" — "+String(source.url||"").slice(0,2000)}).join("\n");return{id:id("memory"),text:("User-approved web knowledge.\nTopic: "+draft.topic+"\nFact: "+proposal.fact+"\nConfidence: "+String(proposal.confidence||"medium").toUpperCase()+"\nVerification: "+(proposal.reason||"Passed generator and critic review.")+"\nApproved: "+new Date(now).toISOString()+"\nSources:\n"+sourceLines).slice(0,8000),source:"knowledge",role:"assistant",title:("Knowledge: "+draft.topic).slice(0,200),createdAt:now+index}});q("#approveKnowledge").disabled=true;try{await memoryPutMany(approved);await updateMemoryCount();appendKnowledgeResult(draft,"**KNOWLEDGE UPDATE APPROVED**\n"+approved.length+" verified fact"+(approved.length===1?" was":"s were")+" added to the synchronized Memory Vault. Unselected proposals were discarded.");state.knowledgeDraft=null;closeKnowledgeAgent();toast(approved.length+" approved knowledge entr"+(approved.length===1?"y":"ies")+" saved and queued for synchronization.")}catch(error){q("#approveKnowledge").disabled=false;toast("Knowledge approval failed: "+error.message)}}
       function rejectKnowledgeDraft(){var draft=state.knowledgeDraft;if(!draft)return;appendKnowledgeResult(draft,"**KNOWLEDGE DRAFT REJECTED**\nNo internet finding from this draft was saved to the Memory Vault.");state.knowledgeDraft=null;closeKnowledgeAgent();toast("Knowledge draft rejected. Nothing was learned.")}
       async function copyHelpGuide(){var guide=helpGuideMarkdown();try{await navigator.clipboard.writeText(guide);toast("Complete JARVIS guide copied.")}catch(error){toast("Copy was blocked. Use Save Guide instead.")}}
-      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.15.0.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
+      function saveHelpGuide(){var guide=helpGuideMarkdown();try{localStorage.setItem("jarvis-saved-help-guide-v1",guide)}catch(error){}var blob=new Blob([guide],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="JARVIS-Help-Guide-1.15.1.md";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Complete guide saved and downloaded.")}
       function chatDistance(){var stream=q("#stream");return stream?Math.max(0,stream.scrollHeight-stream.scrollTop-stream.clientHeight):0}
       function updateJumpButton(newResponse){var button=q("#jumpLatest");if(!button)return;button.textContent=newResponse?"↓ NEW JARVIS RESPONSE":"↓ LATEST RESPONSE";button.classList.toggle("show",!chatStickToBottom&&chatDistance()>90)}
       function scrollChat(behavior){var stream=q("#stream");if(!stream||stream.hidden)return;chatStickToBottom=true;chatAutoScrolling=true;updateJumpButton(false);requestAnimationFrame(function(){stream.scrollTo({top:stream.scrollHeight,left:0,behavior:behavior||"auto"});setTimeout(function(){if(chatAutoScrolling){stream.scrollTop=stream.scrollHeight;chatStickToBottom=true;chatAutoScrolling=false;updateJumpButton(false)}},behavior==="smooth"?420:80)})}
@@ -434,7 +434,7 @@ const HTML = String.raw`<!doctype html>
       var naturalOriginalPrompt="";
       function localReply(prompt,response,speech){var shown=naturalOriginalPrompt||prompt,c=current(),now=Date.now();naturalOriginalPrompt="";chatStickToBottom=true;c.messages.push({id:id("msg"),role:"user",content:shown,createdAt:now});c.messages.push({id:id("msg"),role:"assistant",content:response,createdAt:Date.now()});if(c.messages.length===2)c.title=shown.replace(/\s+/g," ").slice(0,48);c.updatedAt=Date.now();q("#input").value="";save();render();if(state.settings.autoSpeak)speak(typeof speech==="string"?speech:response)}
       function openExternal(url){var opened=null;try{opened=window.open(url,"_blank","noopener,noreferrer")}catch(e){}return opened}
-      async function runBrainSelfCheck(prompt){state.sending=true;state.aiStage="TESTING UNIFIED BRAIN";render();try{var data=await postJson("/api/brain-check",{}),bindings=data.bindings||{},live=data.live||{},checks=["Cloudflare AI: "+(bindings.cloudflareAI?"CONNECTED":"NOT BOUND"),"Live model probe: "+(live.ok?"PASS · "+live.modelKey+" · "+live.latencyMs+" ms":"ATTENTION · "+(live.message||"No response")),"Document conversion: "+(bindings.documentConversion?"READY":"UNAVAILABLE"),"Encrypted sync: "+(bindings.encryptedSync?"READY":"NOT CONFIGURED"),"Semantic memory/RAG: "+(bindings.semanticMemory?"READY":"NOT CONFIGURED"),"SearXNG research: "+(bindings.webResearch?"READY":"NOT CONFIGURED")],desktopApi=window.jarvisDesktop&&typeof window.jarvisDesktop.getCapabilities==="function"?window.jarvisDesktop:null;if(desktopApi){try{var desktop=await desktopApi.getCapabilities();checks.push("Windows desktop link: READY · "+desktop.desktopVersion);checks.push("Automatic updates: "+(desktop.automaticUpdates?"READY":"NOT CONFIGURED"))}catch(desktopError){checks.push("Windows desktop link: ATTENTION")}}else checks.push("Windows desktop link: BROWSER / PWA MODE");state.sending=false;localReply(prompt,"**JARVIS UNIFIED BRAIN SELF-CHECK — "+String(data.status||"unknown").toUpperCase()+"**\n\n"+checks.map(function(item){return"• "+item}).join("\n")+"\n\nBuild: "+data.build+" · managed context: "+Number(data.context&&data.context.maximumManagedCharacters||0).toLocaleString()+" characters · paid-only AI routes: OFF\n\nOptional modules marked NOT CONFIGURED do not stop normal chat. Run this check again after changing Cloudflare bindings, SearXNG, sync, or the Windows installer.",live.ok?"Unified brain self-check passed, "+(state.settings.title||"sir")+".":"Unified brain self-check needs attention, "+(state.settings.title||"sir")+".")}catch(error){state.sending=false;localReply(prompt,"The JARVIS self-check could not complete. "+error.message,false)}return true}
+      async function runBrainSelfCheck(prompt){state.sending=true;state.aiStage="TESTING UNIFIED BRAIN ROUTES";render();try{var data=await postJson("/api/brain-check",{}),bindings=data.bindings||{},live=data.live||{},summary=data.summary||{},probes=Array.isArray(data.probes)?data.probes:[],checks=["Cloudflare AI binding: "+(bindings.cloudflareAI?"CONNECTED":"NOT BOUND"),"Account-bound inference: "+(summary.accountInferenceReached?"REACHED":"NOT REACHED")];probes.forEach(function(probe){var detail=probe.ok?"PASS · "+probe.model+" · "+probe.latencyMs+" ms":"FAIL · "+String(probe.classification||"unknown").toUpperCase()+(probe.code?" ["+probe.code+"]":"")+" · "+(probe.message||"No diagnostic returned");checks.push("Brain route "+String(probe.key||"unknown").toUpperCase()+": "+detail)});checks.push("Document conversion: "+(bindings.documentConversion?"READY":"UNAVAILABLE"));checks.push("Encrypted sync: "+(bindings.encryptedSync?"READY":"NOT CONFIGURED"));checks.push("Semantic memory/RAG: "+(bindings.semanticMemory?"READY":"NOT CONFIGURED"));checks.push("SearXNG research: "+(bindings.webResearch?"READY":"NOT CONFIGURED"));var desktopApi=window.jarvisDesktop&&typeof window.jarvisDesktop.getCapabilities==="function"?window.jarvisDesktop:null;if(desktopApi){try{var desktop=await desktopApi.getCapabilities();checks.push("Windows desktop link: READY · "+desktop.desktopVersion);checks.push("Automatic updates: "+(desktop.automaticUpdates?"READY":"NOT CONFIGURED"))}catch(desktopError){checks.push("Windows desktop link: ATTENTION")}}else checks.push("Windows desktop link: BROWSER / PWA MODE");state.sending=false;localReply(prompt,"**JARVIS UNIFIED BRAIN SELF-CHECK — "+String(data.status||"unknown").toUpperCase()+"**\n\n"+checks.map(function(item){return"• "+item}).join("\n")+"\n\nBuild: "+data.build+" · routes ready: "+Number(summary.readyRoutes||0)+"/"+Number(summary.testedRoutes||0)+" · managed context: "+Number(data.context&&data.context.maximumManagedCharacters||0).toLocaleString()+" characters · paid-only AI routes: OFF\n\nThis report uses account-bound Worker inference, not the public Playground. Sanitized Cloudflare route errors are displayed without API keys or authorization data.",String(data.status||"")==="ready"?"All Unified Brain routes passed, "+(state.settings.title||"sir")+".":live.ok?"JARVIS can answer through an available fallback route, but one or more brain routes need attention, "+(state.settings.title||"sir")+".":"Account-bound Cloudflare inference did not start. Review the displayed route error, "+(state.settings.title||"sir")+".")}catch(error){state.sending=false;localReply(prompt,"The JARVIS self-check could not complete. "+error.message,false)}return true}
       async function runDesktopExtension(prompt,api){var match,query,result,capabilities,lower=prompt.toLowerCase().trim(),explicit=false;match=prompt.match(/^\/tools?(?:\s+(.+))?$/i)||prompt.match(/^open\s+(?:windows\s+)?(?:tool|utility)\s+(.+)$/i);if(match){explicit=true;query=(match[1]||"").trim();if(!api){localReply(prompt,"Windows tools require the genuine JARVIS EXE or MSI. Every previous JARVIS feature remains available in this edition.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**WINDOWS TOOL CATALOG**\n"+capabilities.tools.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /tool followed by the exact tool name. JARVIS will ask before opening it.",false);return true}result=await api.openTool(query);if(result.status==="opened")localReply(prompt,"Opening **"+result.target+"**. JARVIS did not type or execute anything inside the tool.",false);else if(result.status==="cancelled")localReply(prompt,"Opening "+result.target+" was cancelled.",false);else localReply(prompt,"I could not match that Windows tool. Use /tools to view the approved catalog.",false)}catch(error){localReply(prompt,"The Windows tool action was blocked or unavailable. "+error.message,false)}return true}match=prompt.match(/^\/folders?(?:\s+(.+))?$/i)||prompt.match(/^open\s+(?:the\s+)?folder\s+(.+)$/i);if(match){explicit=true;query=(match[1]||"").trim();if(!api){localReply(prompt,"Local folder commands require the genuine JARVIS EXE or MSI. Browser and PWA editions remain sandboxed.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**WINDOWS FOLDER CATALOG**\n"+capabilities.folders.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /folder followed by a folder name.",false);return true}result=await api.openFolder(query);if(result.status==="opened")localReply(prompt,"Opening **"+result.target+"**.",false);else if(result.status==="cancelled")localReply(prompt,"Opening "+result.target+" was cancelled.",false);else localReply(prompt,"I could not match that folder. Use /folders to view the approved locations.",false)}catch(error){localReply(prompt,"The folder action was blocked or unavailable. "+error.message,false)}return true}match=prompt.match(/^\/(?:diagnose|diagnostic|diagnostics)(?:\s+(.+))?$/i)||prompt.match(/^run\s+(ipconfig|systeminfo|whoami|tasklist|driverquery|netstat|route|arp|powercfg|hostname)(?:\s+report)?$/i);if(match){query=(match[1]||"").trim();if(!api){localReply(prompt,"Local diagnostics require the genuine JARVIS EXE or MSI. No previous JARVIS functions have been removed.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**READ-ONLY DIAGNOSTICS**\n"+capabilities.diagnostics.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /diagnose followed by a diagnostic name. Results appear in chat and may synchronize when cloud sync is enabled.",false);return true}result=await api.runDiagnostic(query);if(result.status==="completed")localReply(prompt,"**LOCAL DIAGNOSTIC — "+result.target.toUpperCase()+"**\n\n"+result.output+"\n\nThe fixed read-only command completed. Its output is now part of this conversation.",false);else if(result.status==="cancelled")localReply(prompt,"The "+result.target+" diagnostic was cancelled.",false);else localReply(prompt,"I could not match that diagnostic. Use /diagnostics to view the approved list.",false)}catch(error){localReply(prompt,"The diagnostic was blocked or unavailable. "+error.message,false)}return true}match=prompt.match(/^\/pc(?:\s+(.+))?$/i)||prompt.match(/^(?:please\s+)?(lock|restart|reboot|shutdown|shut down|hibernate)\s+(?:my\s+)?(?:pc|computer)$/i)||prompt.match(/^sign out of windows$/i);if(match){query=(match[1]||(/^sign out/i.test(prompt)?"sign out":"")).trim();if(!api){localReply(prompt,"PC session and power actions require the genuine JARVIS EXE or MSI.",false);return true}try{if(!query){capabilities=await api.getCapabilities();localReply(prompt,"**CONFIRMED PC ACTIONS**\n"+capabilities.powerActions.map(function(item){return"• "+item.name}).join("\n")+"\n\nUse /pc followed by an action. JARVIS requires two native confirmations and defaults both dialogs to Cancel.",false);return true}result=await api.powerAction(query);if(result.status==="started")localReply(prompt,"The confirmed Windows action **"+result.target+"** has started.",false);else if(result.status==="cancelled")localReply(prompt,"The "+result.target+" action was cancelled. Nothing was changed.",false);else localReply(prompt,"I could not match that PC action. Use /pc to view the approved list.",false)}catch(error){localReply(prompt,"The PC action was blocked or unavailable. "+error.message,false)}return true}if(api){match=prompt.match(/^open\s+(.+)$/i);if(match&&!/^(?:https?:\/\/|www\.|google$|youtube$|gmail$|outlook$|chatgpt$|github$|cloudflare$|facebook$|messenger$|maps$)/i.test(match[1].trim())){query=match[1].trim();try{result=await api.openTool(query);if(result.status==="opened"){localReply(prompt,"Opening **"+result.target+"**.",false);return true}if(result.status==="cancelled"){localReply(prompt,"Opening "+result.target+" was cancelled.",false);return true}result=await api.openFolder(query);if(result.status==="opened"){localReply(prompt,"Opening **"+result.target+"**.",false);return true}if(result.status==="cancelled"){localReply(prompt,"Opening "+result.target+" was cancelled.",false);return true}}catch(error){localReply(prompt,"The native Windows action was blocked or unavailable. "+error.message,false);return true}}}return false}
       function calculate(expression){var text=String(expression||"").trim(),i=0;if(!text||text.length>160||!/^[0-9+\-*/%().\s]+$/.test(text))throw new Error("Use numbers and +, -, *, /, %, or parentheses only.");function skip(){while(/\s/.test(text.charAt(i)))i++}function number(){skip();var start=i,dots=0;while(/[0-9.]/.test(text.charAt(i))){if(text.charAt(i)===".")dots++;i++}if(start===i||dots>1)throw new Error("That arithmetic expression is not valid.");var value=Number(text.slice(start,i));if(!Number.isFinite(value))throw new Error("That number is outside the supported range.");return value}function primary(){skip();if(text.charAt(i)==="("){i++;var value=expressionParser();skip();if(text.charAt(i)!==")")throw new Error("A closing parenthesis is missing.");i++;return value}return number()}function unary(){skip();if(text.charAt(i)==="+"){i++;return unary()}if(text.charAt(i)==="-"){i++;return-unary()}return primary()}function term(){var value=unary();while(true){skip();var op=text.charAt(i);if(op!=="*"&&op!=="/"&&op!=="%")break;i++;var right=unary();if((op==="/"||op==="%")&&right===0)throw new Error("Division by zero is not permitted.");value=op==="*"?value*right:op==="/"?value/right:value%right}return value}function expressionParser(){var value=term();while(true){skip();var op=text.charAt(i);if(op!=="+"&&op!=="-")break;i++;var right=term();value=op==="+"?value+right:value-right}return value}var result=expressionParser();skip();if(i!==text.length||!Number.isFinite(result))throw new Error("That arithmetic expression is not valid.");return Math.abs(result)<1e-12?0:Number(result.toPrecision(14))}
       async function systemReport(){var lines=["**LOCAL SYSTEM STATUS**","Online: "+(navigator.onLine?"Yes":"No"),"Platform: "+((navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"Unavailable"),"Processor threads: "+(navigator.hardwareConcurrency||"Unavailable"),"Device memory: "+(navigator.deviceMemory?navigator.deviceMemory+" GB (approximate)":"Unavailable"),"Screen: "+screen.width+" × "+screen.height];var connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;if(connection)lines.push("Network: "+(connection.effectiveType||"unknown")+(connection.downlink?" · "+connection.downlink+" Mbps estimated":""));if(navigator.storage&&navigator.storage.estimate){try{var storage=await navigator.storage.estimate();if(storage.quota)lines.push("Browser storage: "+Math.round((storage.usage||0)/1048576)+" MB used of "+Math.round(storage.quota/1048576)+" MB") }catch(e){}}if(navigator.getBattery){try{var battery=await navigator.getBattery();lines.push("Battery: "+Math.round(battery.level*100)+"%"+(battery.charging?" · charging":""))}catch(e){}}lines.push("\nThis is browser-visible diagnostic information only. JARVIS cannot inspect private files, passwords, or protected Windows controls.");return lines.join("\n")}
@@ -444,7 +444,7 @@ const HTML = String.raw`<!doctype html>
         match=prompt.match(/^\/(?:open)\s+(.+)$/i)||prompt.match(/^open\s+(?:website\s+)?(.+)$/i);if(match){value=match[1].trim().replace(/[?.!]+$/g,"");var aliases={google:"https://www.google.com",youtube:"https://www.youtube.com",gmail:"https://mail.google.com",outlook:"https://outlook.office.com/mail/",chatgpt:"https://chatgpt.com",github:"https://github.com",cloudflare:"https://dash.cloudflare.com",facebook:"https://www.facebook.com",messenger:"https://www.messenger.com",maps:"https://maps.google.com"},url=aliases[value.toLowerCase()]||value;if(!/^https?:\/\//i.test(url)){if(!/^[a-z0-9.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(url)){localReply(prompt,"I did not recognize that website. Try /open youtube, /open cloudflare, or include a full https:// address.",false);return true}url="https://"+url}try{var parsed=new URL(url);if(parsed.protocol!=="https:"&&parsed.protocol!=="http:")throw new Error("Unsupported protocol");openExternal(parsed.href);localReply(prompt,"Opening **"+parsed.hostname+"** in a new tab. If nothing opens, allow pop-ups for JARVIS and try again.",false)}catch(error){localReply(prompt,"I could not open that address safely. Use a valid http:// or https:// website.",false)}return true}return false}
       async function send(){var c=current(),prompt=q("#input").value.trim();if(!prompt||state.sending)return;if(await runSmartAction(prompt))return;if(prompt==="/clear"){clearChat();q("#input").value="";return}if(prompt.toLowerCase().indexOf("/remember ")===0){var fact=prompt.slice(10).trim();if(!fact){toast("Type /remember followed by what JARVIS should remember.");return}try{var now=Date.now();c.messages.push({id:id("msg"),role:"user",content:prompt,createdAt:now});await memoryPutMany([{id:id("memory"),text:fact.slice(0,8000),source:"explicit",role:"user",title:"Explicit memory",createdAt:now}]);var remembered={id:id("msg"),role:"assistant",content:"Understood. I have stored that in your local Memory Vault. You may erase it from Settings at any time.",createdAt:Date.now()};c.messages.push(remembered);c.updatedAt=Date.now();q("#input").value="";save();render();updateMemoryCount();if(state.settings.autoSpeak)speak(remembered.content)}catch(error){toast(error.message)}return}var context=state.attachments.length?"\n\nAttached context:\n"+state.attachments.map(function(a){return"--- "+a.name+" ---\n"+a.content}).join("\n\n"):"",memory=await memorySearch(prompt);var msg={id:id("msg"),role:"user",content:prompt,createdAt:Date.now()};c.messages.push(msg);if(c.messages.length===1)c.title=prompt.replace(/\s+/g," ").slice(0,48);c.updatedAt=Date.now();q("#input").value="";state.attachments=[];state.sending=true;memoryAdd(prompt,"jarvis","user",c.title).then(updateMemoryCount).catch(function(){});save();render();try{var data;if(c.mode==="image")data=await postJson("/api/image",{prompt:prompt});else if(state.settings.provider==="ollama"){var research="";if(state.settings.webSearch){var researchData=await postJson("/api/research",{query:prompt});research=researchData.context||""}data={response:await askOllama(c,context,memory,research)}}else data=await postJson("/api/chat",{mode:c.mode,modelKey:state.settings.cloudModel,temperature:state.settings.creativity,concise:state.settings.concise,userTitle:state.settings.title,messages:c.messages.map(function(m){return{role:m.role,content:m.content}}),context:context,memory:memory,webSearch:state.settings.webSearch});var reply={id:id("msg"),role:"assistant",content:c.mode==="image"?(data.demo?"Vision module ready. Deploy with the Cloudflare Workers AI binding to generate this image.":"Image synthesis complete. You may download the result below."):(data.response||"No response was returned."),image:data.image,createdAt:Date.now()};c.messages.push(reply);c.updatedAt=Date.now();if(state.settings.autoSpeak)speak(reply.content)}catch(e){c.messages.push({id:id("msg"),role:"assistant",content:"I am sorry, "+(state.settings.title||"sir")+". "+e.message,createdAt:Date.now()})}finally{state.sending=false;save();render()}}
       var runSmartActionV10=runSmartAction;
-      runSmartAction=async function(prompt){var lower=String(prompt||"").toLowerCase().trim();if(lower==="/aicheck"||lower==="/selfcheck"||lower==="run jarvis self check"||lower==="check jarvis brain"||lower==="test jarvis brain"||lower==="is jarvis working")return runBrainSelfCheck(prompt);if(lower==="/help"||lower==="help"||lower.indexOf("what can you do")>-1||lower.indexOf("show commands")>-1){localReply(prompt,"**JARVIS 1.15 SMART ACTIONS**\n/aicheck — run the live Unified Brain and resource diagnostic\n/mission [goal] — build a reviewable Mission Control plan\n/missions — open Mission Control\n/screen [question] — analyze one approved screen capture\n/itcheck — run a read-only Windows IT health analysis\n/briefing — weather, device, mission, and review briefing\n/skills — show enabled smart skills\n/weather [place] — current conditions and forecast\n/open [site or URL] · /search [query] · /maps [place] · /youtube [query]\n/settings [area] · /controlpanel [item] · /app [name]\n/tools · /tool [name] · /folders · /folder [name]\n/diagnostics · /diagnose [name] · /pc [action]\n/system · /calculate [math] · /speak [text] · /mute · /new · /remember [fact]\n\nNatural language remains available for every supported action, and every slash command remains available. Mission steps never bypass the confirmation required by Windows actions.","Smart actions and the Free-Max Unified Brain are online, "+(state.settings.title||"sir")+".");return true}if(await runSmartUpgradeAction(prompt))return true;return runSmartActionV10(prompt)};
+      runSmartAction=async function(prompt){var lower=String(prompt||"").toLowerCase().trim();if(lower==="/aicheck"||lower==="/selfcheck"||lower==="run jarvis self check"||lower==="check jarvis brain"||lower==="test jarvis brain"||lower==="is jarvis working")return runBrainSelfCheck(prompt);if(lower==="/help"||lower==="help"||lower.indexOf("what can you do")>-1||lower.indexOf("show commands")>-1){localReply(prompt,"**JARVIS 1.15.1 SMART ACTIONS**\n/aicheck — test every account-bound Unified Brain route and resource\n/mission [goal] — build a reviewable Mission Control plan\n/missions — open Mission Control\n/screen [question] — analyze one approved screen capture\n/itcheck — run a read-only Windows IT health analysis\n/briefing — weather, device, mission, and review briefing\n/skills — show enabled smart skills\n/weather [place] — current conditions and forecast\n/open [site or URL] · /search [query] · /maps [place] · /youtube [query]\n/settings [area] · /controlpanel [item] · /app [name]\n/tools · /tool [name] · /folders · /folder [name]\n/diagnostics · /diagnose [name] · /pc [action]\n/system · /calculate [math] · /speak [text] · /mute · /new · /remember [fact]\n\nNatural language remains available for every supported action, and every slash command remains available. Mission steps never bypass the confirmation required by Windows actions.","Smart actions and the Free-Max Unified Brain are online, "+(state.settings.title||"sir")+".");return true}if(await runSmartUpgradeAction(prompt))return true;return runSmartActionV10(prompt)};
       var runSmartActionV11=runSmartAction;
       runSmartAction=async function(prompt){var lower=String(prompt||"").toLowerCase().trim();if(lower==="/help"||lower==="help"||lower==="/tutorial"||lower==="tutorial"||lower==="commands"||lower==="functions"||lower.indexOf("what can you do")>-1||lower.indexOf("show commands")>-1){q("#input").value="";inputChanged();openHelpCenter();return true}return runSmartActionV11(prompt)};
       var runSmartActionV12=runSmartAction;
@@ -646,7 +646,7 @@ const LOGIN_HTML = String.raw`<!doctype html>
       <button class="submit" id="submit" type="submit">ESTABLISH SECURE LINK</button>
       <div class="status" id="status" role="status" aria-live="polite">AWAITING CREDENTIALS</div>
     </form>
-    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.15.0</div>
+    <div class="secure"><b>●</b> SINGLE-USER SECURE SESSION · BUILD 1.15.1</div>
   </main>
   <script>
     (function(){
@@ -769,9 +769,54 @@ function textFromResult(result) {
         : choiceContent;
 }
 
+function aiErrorDetails(error) {
+  const source = error && typeof error === "object" ? error : {};
+  const raw = String(source.message || (source.cause && source.cause.message) || error || "Cloudflare Workers AI request failed.");
+  const normalized = raw.toLowerCase();
+  const explicitCode = source.code || (source.cause && source.cause.code);
+  const matchedCode = raw.match(/(?:error|code|status)\s*[:#-]?\s*(\d{3,6})/i);
+  const code = String(explicitCode || (matchedCode && matchedCode[1]) || "").slice(0, 16);
+  let classification = "unknown";
+  if (/quota|allocation|3036|daily limit|neuron/i.test(normalized)) classification = "allocation";
+  else if (/rate limit|too many requests|429/i.test(normalized)) classification = "rate_limit";
+  else if (/billing|payment|required plan|paid plan|credits/i.test(normalized)) classification = "billing";
+  else if (/unauthori[sz]ed|forbidden|permission|access denied|not enabled|authentication|401|403/i.test(normalized)) classification = "access";
+  else if (/timeout|timed out/i.test(normalized)) classification = "timeout";
+  else if (/model|capacity|unavailable|temporar|overloaded|not found|unsupported|internal server|bad gateway|service unavailable/i.test(normalized)) classification = "model";
+  const message = raw
+    .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+/gi, "Bearer [REDACTED]")
+    .replace(/([?&](?:key|token|secret|signature)=)[^&\s]+/gi, "$1[REDACTED]")
+    .replace(/\b(?:sk|ghp|AIza)[A-Za-z0-9_-]{16,}\b/g, "[REDACTED]")
+    .replace(/\b[a-f0-9]{24,}\b/gi, "[REDACTED_ID]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 320);
+  return { classification, code, message };
+}
+
 function isQuotaOrAccessError(error) {
-  return /quota|allocation|3036|rate limit|too many requests|billing|payment|required plan|unauthori[sz]ed|forbidden|permission/i
-    .test(String(error && error.message || error || ""));
+  return ["allocation", "rate_limit", "billing", "access"].includes(aiErrorDetails(error).classification);
+}
+
+function isAccountWideAiError(error) {
+  return ["allocation", "rate_limit", "billing"].includes(aiErrorDetails(error).classification);
+}
+
+function aiErrorStatus(details) {
+  if (details.classification === "allocation" || details.classification === "rate_limit") return 429;
+  if (details.classification === "billing" || details.classification === "access") return 403;
+  return 502;
+}
+
+function aiErrorUserMessage(details) {
+  const suffix = details.code ? ` [Cloudflare ${details.code}]` : "";
+  if (details.classification === "allocation") return `Cloudflare Workers AI reports that the daily free allocation is unavailable${suffix}. It resets at 00:00 UTC.`;
+  if (details.classification === "rate_limit") return `Cloudflare Workers AI is temporarily rate-limiting requests${suffix}. Please retry shortly.`;
+  if (details.classification === "billing") return `Cloudflare Workers AI rejected this route because of its billing or plan policy${suffix}.`;
+  if (details.classification === "access") return `Cloudflare Workers AI rejected the account-bound inference request${suffix}. Run /aicheck for the exact sanitized diagnostic.`;
+  if (details.classification === "timeout") return `Cloudflare Workers AI did not respond before the request timed out${suffix}.`;
+  if (details.classification === "model") return `The selected Cloudflare model is temporarily unavailable${suffix}.`;
+  return `Cloudflare Workers AI could not complete the request${suffix}.`;
 }
 
 function isRetryableModelError(error) {
@@ -800,7 +845,8 @@ async function runTextWithFallback(env, preferredKey, input) {
       return { result: await env.AI.run(model, input), model, modelKey: key, attempted };
     } catch (error) {
       lastError = error;
-      if (isQuotaOrAccessError(error) || !isRetryableModelError(error)) throw error;
+      const classification = aiErrorDetails(error).classification;
+      if (isAccountWideAiError(error) || (classification !== "access" && !isRetryableModelError(error))) throw error;
     }
   }
   throw lastError || new Error("No free Cloudflare text route was available.");
@@ -1436,11 +1482,8 @@ async function chat(request, env) {
     };
     return json({ response, modelKey: generatorRoute.modelKey, modelUsed: generatorRoute.model, route: generatorRoute.attempted, contextBudget, reflection, warnings, toolsUsed });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "The AI request failed.";
-    const quota = isQuotaOrAccessError(error);
-    return json({ error: quota
-      ? "The free Cloudflare AI allowance has been reached for today. It resets at 00:00 UTC."
-      : "Neural link error: " + message }, quota ? 429 : 500);
+    const diagnostic = aiErrorDetails(error);
+    return json({ error: aiErrorUserMessage(diagnostic), diagnostic: { classification: diagnostic.classification, code: diagnostic.code } }, aiErrorStatus(diagnostic));
   }
 }
 
@@ -1833,6 +1876,33 @@ async function speech(request, env) {
   }
 }
 
+async function probeBrainRoute(env, key, model) {
+  const startedAt = Date.now();
+  try {
+    const result = await env.AI.run(model, {
+      messages: [
+        { role: "system", content: "This is a JARVIS health probe. Reply with exactly READY." },
+        { role: "user", content: "Health probe" },
+      ],
+    });
+    const output = textFromResult(result).trim();
+    if (!output) throw new Error("The model returned an empty health-probe response.");
+    return { key, model, ok: true, latencyMs: Date.now() - startedAt, output: output.slice(0, 40), classification: "ready", code: "", message: "Live inference succeeded." };
+  } catch (error) {
+    const diagnostic = aiErrorDetails(error);
+    return {
+      key,
+      model,
+      ok: false,
+      latencyMs: Date.now() - startedAt,
+      output: "",
+      classification: diagnostic.classification,
+      code: diagnostic.code,
+      message: diagnostic.message || aiErrorUserMessage(diagnostic),
+    };
+  }
+}
+
 async function brainCheck(request, env) {
   const startedAt = Date.now();
   const bindings = {
@@ -1842,40 +1912,42 @@ async function brainCheck(request, env) {
     semanticMemory: Boolean(env.JARVIS_VECTORIZE && typeof env.JARVIS_VECTORIZE.query === "function"),
     webResearch: Boolean(typeof env.SEARXNG_URL === "string" && /^https:\/\//i.test(env.SEARXNG_URL.trim())),
   };
-  let live = { ok: false, latencyMs: 0, modelKey: "", model: "", route: [], message: "Cloudflare Workers AI is not bound." };
+  let probes = [];
+  let live = { ok: false, latencyMs: 0, modelKey: "", model: "", route: [], classification: "configuration", code: "", message: "Cloudflare Workers AI is not bound." };
   if (bindings.cloudflareAI) {
-    try {
-      const route = await runTextWithFallback(env, "balanced", {
-        messages: [
-          { role: "system", content: "This is a JARVIS health probe. Reply with exactly READY." },
-          { role: "user", content: "Health probe" },
-        ],
-        max_tokens: 12,
-        temperature: 0,
-      });
-      const output = textFromResult(route.result).trim();
-      if (!output) throw new Error("The model returned an empty health-probe response.");
-      live = { ok: true, latencyMs: Date.now() - startedAt, modelKey: route.modelKey, model: route.model, route: route.attempted, message: "A live Cloudflare model response was received." };
-    } catch (error) {
+    const routes = [
+      ["general", TEXT_MODELS.balanced],
+      ["code", TEXT_MODELS.code],
+      ["reasoning", TEXT_MODELS.reasoning],
+      ["vision-text", VISION_MODEL],
+    ];
+    for (const [key, model] of routes) probes.push(await probeBrainRoute(env, key, model));
+    const general = probes[0];
+    const firstReady = probes.find((probe) => probe.ok);
+    const representative = general && general.ok ? general : firstReady || general;
+    if (representative) {
       live = {
-        ok: false,
-        latencyMs: Date.now() - startedAt,
-        modelKey: "",
-        model: "",
-        route: [],
-        message: isQuotaOrAccessError(error)
-          ? "The AI binding is present, but its free allocation or account access is currently unavailable."
-          : "The AI binding is present, but the live model probe did not complete.",
+        ok: Boolean(representative.ok),
+        latencyMs: representative.latencyMs,
+        modelKey: representative.key,
+        model: representative.model,
+        route: probes.filter((probe) => probe.ok).map((probe) => probe.key),
+        classification: representative.classification,
+        code: representative.code,
+        message: representative.ok ? "An account-bound Cloudflare model response was received." : representative.message,
       };
     }
   }
-  const status = live.ok ? "ready" : bindings.cloudflareAI ? "degraded" : "configuration_required";
+  const readyCount = probes.filter((probe) => probe.ok).length;
+  const status = !bindings.cloudflareAI ? "configuration_required" : readyCount === probes.length && readyCount > 0 ? "ready" : "degraded";
   return json({
     service: "JARVIS Unified Brain",
     build: BUILD_VERSION,
     status,
     checkedAt: new Date().toISOString(),
     live,
+    probes,
+    summary: { testedRoutes: probes.length, readyRoutes: readyCount, failedRoutes: probes.length - readyCount, accountInferenceReached: readyCount > 0, totalLatencyMs: Date.now() - startedAt },
     bindings,
     models: {
       general: TEXT_MODELS.balanced,
